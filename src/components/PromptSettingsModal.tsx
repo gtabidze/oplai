@@ -147,68 +147,75 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
   };
 
   const handleSave = async () => {
-    if (selectedQuestionPrompt && selectedAnswerPrompt) {
-      try {
-        // Save to localStorage for backward compatibility
-        localStorage.setItem('questionSystemPrompt', questionContent);
-        localStorage.setItem('answerSystemPrompt', answerContent);
-        
-        // Create new versions if content has changed
-        if (selectedQuestionVersion && questionContent !== selectedQuestionVersion.content) {
-          const newVersionNumber = Math.max(...questionVersions.map(v => v.version_number)) + 1;
-          const { error: versionError } = await supabase
-            .from("prompt_versions")
-            .insert({
-              prompt_id: selectedQuestionPrompt.id,
-              content: questionContent,
-              version_number: newVersionNumber,
-            });
-          if (versionError) throw versionError;
-        }
+    if (!selectedQuestionPrompt && !selectedAnswerPrompt) {
+      toast.error("Please select at least one prompt to save");
+      return;
+    }
 
-        if (selectedAnswerVersion && answerContent !== selectedAnswerVersion.content) {
-          const newVersionNumber = Math.max(...answerVersions.map(v => v.version_number)) + 1;
-          const { error: versionError } = await supabase
-            .from("prompt_versions")
-            .insert({
-              prompt_id: selectedAnswerPrompt.id,
-              content: answerContent,
-              version_number: newVersionNumber,
-            });
-          if (versionError) throw versionError;
-        }
-        
-        // Set as active prompts in database
+    try {
+      // Save to localStorage for backward compatibility
+      if (questionContent) localStorage.setItem('questionSystemPrompt', questionContent);
+      if (answerContent) localStorage.setItem('answerSystemPrompt', answerContent);
+      
+      // Create new versions if content has changed
+      if (selectedQuestionPrompt && selectedQuestionVersion && questionContent !== selectedQuestionVersion.content) {
+        const newVersionNumber = Math.max(...questionVersions.map(v => v.version_number)) + 1;
+        const { error: versionError } = await supabase
+          .from("prompt_versions")
+          .insert({
+            prompt_id: selectedQuestionPrompt.id,
+            content: questionContent,
+            version_number: newVersionNumber,
+          });
+        if (versionError) throw versionError;
+      }
+
+      if (selectedAnswerPrompt && selectedAnswerVersion && answerContent !== selectedAnswerVersion.content) {
+        const newVersionNumber = Math.max(...answerVersions.map(v => v.version_number)) + 1;
+        const { error: versionError } = await supabase
+          .from("prompt_versions")
+          .insert({
+            prompt_id: selectedAnswerPrompt.id,
+            content: answerContent,
+            version_number: newVersionNumber,
+          });
+        if (versionError) throw versionError;
+      }
+      
+      // Set as active prompts in database
+      if (selectedQuestionPrompt) {
         const { error: questionError } = await supabase
           .from("prompts")
           .update({ is_active: true })
           .eq("id", selectedQuestionPrompt.id);
 
         if (questionError) throw questionError;
+      }
 
+      if (selectedAnswerPrompt) {
         const { error: answerError } = await supabase
           .from("prompts")
           .update({ is_active: true })
           .eq("id", selectedAnswerPrompt.id);
 
         if (answerError) throw answerError;
-        
-        toast.success("System prompts activated successfully!");
-        
-        // Reload prompts and versions to update the UI
-        await loadPrompts();
-        if (selectedQuestionPrompt) {
-          await loadVersions(selectedQuestionPrompt.id, "question");
-        }
-        if (selectedAnswerPrompt) {
-          await loadVersions(selectedAnswerPrompt.id, "answer");
-        }
-        
-        setHasChanges(false);
-        onOpenChange(false);
-      } catch (error: any) {
-        toast.error(error.message || "Failed to save prompts");
       }
+      
+      toast.success("System prompts activated successfully!");
+      
+      // Reload prompts and versions to update the UI
+      await loadPrompts();
+      if (selectedQuestionPrompt) {
+        await loadVersions(selectedQuestionPrompt.id, "question");
+      }
+      if (selectedAnswerPrompt) {
+        await loadVersions(selectedAnswerPrompt.id, "answer");
+      }
+      
+      setHasChanges(false);
+      onOpenChange(false);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save prompts");
     }
   };
 
@@ -437,7 +444,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!selectedQuestionPrompt || !selectedAnswerPrompt || !hasChanges} className="gap-2">
+          <Button onClick={handleSave} disabled={(!selectedQuestionPrompt && !selectedAnswerPrompt) || !hasChanges} className="gap-2">
             <Save className="h-4 w-4" />
             Save Active Prompts
           </Button>
