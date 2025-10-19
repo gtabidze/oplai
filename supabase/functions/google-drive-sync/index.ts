@@ -54,21 +54,53 @@ async function listGoogleDriveFiles(accessToken: string): Promise<GoogleDriveFil
   return data.files || [];
 }
 
-async function getFileContent(fileId: string, accessToken: string): Promise<string> {
-  const response = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+async function getFileContent(fileId: string, mimeType: string, accessToken: string): Promise<string> {
+  try {
+    // For Google Docs, Sheets, Slides - export as plain text
+    if (mimeType === 'application/vnd.google-apps.document') {
+      // Export Google Doc as plain text
+      const response = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/plain`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        console.error(`Failed to export Google Doc ${fileId}:`, response.status);
+        return '';
+      }
+      
+      return await response.text();
     }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch file content for ${fileId}`);
+    
+    // For plain text files, fetch directly
+    if (mimeType.includes('text/plain')) {
+      const response = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        console.error(`Failed to fetch text file ${fileId}:`, response.status);
+        return '';
+      }
+      
+      return await response.text();
+    }
+    
+    // For other types (PDFs, Office docs), skip content download
+    return '';
+  } catch (error) {
+    console.error(`Error fetching content for ${fileId}:`, error);
+    return '';
   }
-
-  return await response.text();
 }
 
 Deno.serve(async (req) => {
@@ -135,7 +167,8 @@ Deno.serve(async (req) => {
     const textFiles = files.filter(file => 
       file.mimeType.includes('text') || 
       file.mimeType.includes('document') ||
-      file.mimeType === 'application/pdf'
+      file.mimeType === 'application/pdf' ||
+      file.mimeType.includes('application/vnd.google-apps')
     );
 
     console.log(`Processing ${textFiles.length} text-based files`);
@@ -146,9 +179,13 @@ Deno.serve(async (req) => {
       try {
         let content = '';
         
-        // Only fetch content for small text files
-        if (file.mimeType.includes('text/plain') && (!file.size || parseInt(file.size) < 1000000)) {
-          content = await getFileContent(file.id, accessToken);
+        // Fetch content for supported file types
+        if (
+          file.mimeType === 'application/vnd.google-apps.document' ||
+          (file.mimeType.includes('text/plain') && (!file.size || parseInt(file.size) < 1000000))
+        ) {
+          content = await getFileContent(file.id, file.mimeType, accessToken);
+          console.log(`Fetched content for ${file.name}: ${content.length} chars`);
         }
 
         const { data: syncedFile, error: syncError } = await supabaseClient
