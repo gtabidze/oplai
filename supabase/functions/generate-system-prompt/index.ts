@@ -19,9 +19,11 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const systemPrompt = `You are an expert in creating structured system prompts for AI assistants. Create a comprehensive, well-structured system prompt for ${type} generation.
+    const systemPrompt = `You are an expert in creating structured system prompts for AI assistants. 
 
-The prompt should include these sections:
+CRITICAL: Return ONLY the prompt content itself, without any introductory text, explanations, or markdown code blocks. Do not include phrases like "Here's a" or "Here is" or wrap the prompt in code blocks. The output should be immediately usable as a system prompt.
+
+Create a comprehensive, well-structured system prompt for ${type} generation that includes these sections:
 1. **Role Definition**: Clearly define the AI's role and expertise
 2. **Task Description**: Explain what the AI should do
 3. **Output Format**: Specify exact format requirements
@@ -30,11 +32,15 @@ The prompt should include these sections:
 6. **Considerations**: Important factors to keep in mind
 7. **Examples** (if applicable): Brief examples of good output
 
-Format the prompt in a clear, hierarchical structure using markdown formatting.`;
+Format the prompt using markdown with clear headers (# ## ###) and structure.`;
 
     const userPrompt = context 
-      ? `Create a system prompt for ${type} generation. Context: ${context}`
-      : `Create a professional system prompt for ${type} generation that will help generate high-quality, relevant, and accurate results.`;
+      ? `Create a system prompt for ${type} generation. Context: ${context}
+
+Remember: Return ONLY the prompt content, no explanations or wrappers.`
+      : `Create a professional system prompt for ${type} generation that will help generate high-quality, relevant, and accurate results.
+
+Remember: Return ONLY the prompt content, no explanations or wrappers.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
