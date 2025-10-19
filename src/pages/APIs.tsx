@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Code2, Copy, Trash2, RefreshCw, ChevronDown } from "lucide-react";
+import { Plus, Code2, Copy, Trash2, RefreshCw, ChevronDown, Pencil } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -68,6 +68,8 @@ const APIs = () => {
   });
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingEndpoint, setEditingEndpoint] = useState<APIEndpoint | null>(null);
   const [newEndpoint, setNewEndpoint] = useState<Partial<APIEndpoint>>({
     name: "",
     selectedPlaybooks: [],
@@ -117,6 +119,26 @@ const APIs = () => {
       },
     });
     toast.success("API endpoint created successfully");
+  };
+
+  const handleEditEndpoint = (endpoint: APIEndpoint) => {
+    setEditingEndpoint(endpoint);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateEndpoint = () => {
+    if (!editingEndpoint) return;
+
+    setEndpoints(
+      endpoints.map((endpoint) =>
+        endpoint.id === editingEndpoint.id
+          ? { ...editingEndpoint, updatedAt: Date.now() }
+          : endpoint
+      )
+    );
+    setIsEditDialogOpen(false);
+    setEditingEndpoint(null);
+    toast.success("API endpoint updated successfully");
   };
 
   const togglePlaybookSelection = (playbookId: string) => {
@@ -400,6 +422,141 @@ const APIs = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* Edit Dialog for Golden Datasets API */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Edit {editingEndpoint?.name}</DialogTitle>
+                <DialogDescription>
+                  Configure which data points to include in this API endpoint
+                </DialogDescription>
+              </DialogHeader>
+              {editingEndpoint && (
+                <div className="space-y-6 py-4">
+                  <div className="space-y-3">
+                    <Label>Data Points to Include</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="edit-playbookContent"
+                          checked={editingEndpoint.dataPoints.playbookContent}
+                          onCheckedChange={(checked) =>
+                            setEditingEndpoint({
+                              ...editingEndpoint,
+                              dataPoints: {
+                                ...editingEndpoint.dataPoints,
+                                playbookContent: checked as boolean,
+                              },
+                            })
+                          }
+                        />
+                        <label htmlFor="edit-playbookContent" className="text-sm cursor-pointer">
+                          Playbook Content
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="edit-questions"
+                          checked={editingEndpoint.dataPoints.questions}
+                          onCheckedChange={(checked) =>
+                            setEditingEndpoint({
+                              ...editingEndpoint,
+                              dataPoints: {
+                                ...editingEndpoint.dataPoints,
+                                questions: checked as boolean,
+                              },
+                            })
+                          }
+                        />
+                        <label htmlFor="edit-questions" className="text-sm cursor-pointer">
+                          Questions
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="edit-answers"
+                          checked={editingEndpoint.dataPoints.answers}
+                          onCheckedChange={(checked) =>
+                            setEditingEndpoint({
+                              ...editingEndpoint,
+                              dataPoints: {
+                                ...editingEndpoint.dataPoints,
+                                answers: checked as boolean,
+                              },
+                            })
+                          }
+                        />
+                        <label htmlFor="edit-answers" className="text-sm cursor-pointer">
+                          Answers
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="edit-scores"
+                          checked={editingEndpoint.dataPoints.scores}
+                          onCheckedChange={(checked) =>
+                            setEditingEndpoint({
+                              ...editingEndpoint,
+                              dataPoints: {
+                                ...editingEndpoint.dataPoints,
+                                scores: checked as boolean,
+                              },
+                            })
+                          }
+                        />
+                        <label htmlFor="edit-scores" className="text-sm cursor-pointer">
+                          Scores
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="edit-createdDate"
+                          checked={editingEndpoint.dataPoints.createdDate}
+                          onCheckedChange={(checked) =>
+                            setEditingEndpoint({
+                              ...editingEndpoint,
+                              dataPoints: {
+                                ...editingEndpoint.dataPoints,
+                                createdDate: checked as boolean,
+                              },
+                            })
+                          }
+                        />
+                        <label htmlFor="edit-createdDate" className="text-sm cursor-pointer">
+                          Created Date
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="edit-updatedDate"
+                          checked={editingEndpoint.dataPoints.updatedDate}
+                          onCheckedChange={(checked) =>
+                            setEditingEndpoint({
+                              ...editingEndpoint,
+                              dataPoints: {
+                                ...editingEndpoint.dataPoints,
+                                updatedDate: checked as boolean,
+                              },
+                            })
+                          }
+                        />
+                        <label htmlFor="edit-updatedDate" className="text-sm cursor-pointer">
+                          Updated Date
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateEndpoint}>Save Changes</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* API Endpoints List */}
@@ -431,6 +588,16 @@ const APIs = () => {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
+                    {endpoint.id === "golden-datasets-api" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditEndpoint(endpoint)}
+                        title="Edit"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -439,14 +606,16 @@ const APIs = () => {
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteEndpoint(endpoint.id)}
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {endpoint.id !== "golden-datasets-api" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteEndpoint(endpoint.id)}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -490,25 +659,28 @@ const APIs = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={endpoint.isActive}
-                        onCheckedChange={() => toggleEndpointStatus(endpoint.id)}
-                        disabled={endpoint.id === "golden-datasets-api"}
-                      />
-                      <Label className="text-sm">
-                        {endpoint.id === "golden-datasets-api" 
-                          ? "Always Active" 
-                          : endpoint.isActive 
-                            ? "Deactivate" 
-                            : "Activate"} API
-                      </Label>
+                  {endpoint.id === "golden-datasets-api" ? (
+                    <div className="pt-2 border-t">
+                      <p className="text-xs text-muted-foreground">
+                        Created: {formatDate(endpoint.createdAt)}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Created: {formatDate(endpoint.createdAt)}
-                    </p>
-                  </div>
+                  ) : (
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={endpoint.isActive}
+                          onCheckedChange={() => toggleEndpointStatus(endpoint.id)}
+                        />
+                        <Label className="text-sm">
+                          {endpoint.isActive ? "Deactivate" : "Activate"} API
+                        </Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Created: {formatDate(endpoint.createdAt)}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
