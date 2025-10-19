@@ -353,44 +353,46 @@ const Playgrounds = () => {
       </div>
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent className="w-[90vw] sm:w-[700px] lg:w-[900px] overflow-y-auto">
+        <SheetContent className="w-[95vw] sm:max-w-[1200px] overflow-y-auto">
           {selectedQuestion && (
             <>
               <SheetHeader>
                 <div className="flex items-center justify-between">
-                  <SheetTitle>Question Details</SheetTitle>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeleteQuestionId(selectedQuestion.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
+                  <SheetTitle className="text-lg">Question Details</SheetTitle>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setDeleteQuestionId(selectedQuestion.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
                 </div>
               </SheetHeader>
 
-              <div className="mt-6 space-y-6">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Playbook</p>
-                  <p className="font-medium">{selectedQuestion.plaibookTitle}</p>
+              <div className="mt-4 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Playbook</p>
+                    <p className="text-sm font-medium">{selectedQuestion.plaibookTitle}</p>
+                  </div>
+                  {selectedQuestion.feedback && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Score</p>
+                      <p className="text-sm font-medium">{selectedQuestion.feedback.score}%</p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm text-muted-foreground">Question</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-muted-foreground">Question</p>
                     {!isEditing ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsEditing(true)}
-                      >
-                        <Edit2 className="h-4 w-4 mr-1" />
+                      <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                        <Edit2 className="h-3 w-3 mr-1" />
                         Edit
                       </Button>
                     ) : (
-                      <div className="flex gap-2">
+                      <div className="flex gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -399,14 +401,10 @@ const Playgrounds = () => {
                             setEditedQuestion(selectedQuestion.question);
                           }}
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-3 w-3" />
                         </Button>
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={handleEditQuestion}
-                        >
-                          <Save className="h-4 w-4 mr-1" />
+                        <Button variant="default" size="sm" onClick={handleEditQuestion}>
+                          <Save className="h-3 w-3 mr-1" />
                           Save
                         </Button>
                       </div>
@@ -416,37 +414,37 @@ const Playgrounds = () => {
                     <Input
                       value={editedQuestion}
                       onChange={(e) => setEditedQuestion(e.target.value)}
-                      className="w-full"
+                      className="w-full text-sm"
                     />
                   ) : (
-                    <p className="text-base">{selectedQuestion.question}</p>
+                    <p className="text-sm">{selectedQuestion.question}</p>
                   )}
                 </div>
 
                 {/* LLM Provider Selection */}
-                <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label>Generation Mode</Label>
+                <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Generation Mode</Label>
                     <Button
                       variant={comparisonMode ? "default" : "outline"}
                       size="sm"
                       onClick={() => setComparisonMode(!comparisonMode)}
                     >
-                      {comparisonMode ? "Comparison Mode" : "Single Mode"}
+                      {comparisonMode ? "Comparison" : "Single"}
                     </Button>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className={comparisonMode ? "grid grid-cols-2 gap-3" : "space-y-2"}>
                     {/* First Provider */}
-                    <div className="space-y-2">
-                      <Label htmlFor="provider" className="text-xs font-semibold">
-                        {comparisonMode ? "Provider 1" : "AI Provider"}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="provider" className="text-xs">
+                        {comparisonMode ? "Provider 1" : "Provider"}
                       </Label>
                       <Select value={selectedProvider} onValueChange={(value) => {
                         setSelectedProvider(value);
                         setSelectedModel(providerModels[value][0].value);
                       }}>
-                        <SelectTrigger id="provider">
+                        <SelectTrigger id="provider" className="h-8 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -455,12 +453,8 @@ const Playgrounds = () => {
                           <SelectItem value="anthropic">Anthropic</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="model" className="text-xs font-semibold">Model</Label>
                       <Select value={selectedModel} onValueChange={setSelectedModel}>
-                        <SelectTrigger id="model">
+                        <SelectTrigger id="model" className="h-8 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -475,94 +469,81 @@ const Playgrounds = () => {
 
                     {/* Second Provider (Comparison Mode) */}
                     {comparisonMode && (
-                      <>
-                        <div className="border-t pt-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="compareProvider" className="text-xs font-semibold">Provider 2</Label>
-                            <Select value={compareProvider} onValueChange={(value) => {
-                              setCompareProvider(value);
-                              setCompareModel(providerModels[value][0].value);
-                            }}>
-                              <SelectTrigger id="compareProvider">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="lovable">Lovable AI</SelectItem>
-                                <SelectItem value="openai">OpenAI</SelectItem>
-                                <SelectItem value="anthropic">Anthropic</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="space-y-2 mt-2">
-                            <Label htmlFor="compareModel" className="text-xs font-semibold">Model</Label>
-                            <Select value={compareModel} onValueChange={setCompareModel}>
-                              <SelectTrigger id="compareModel">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {providerModels[compareProvider]?.map((model) => (
-                                  <SelectItem key={model.value} value={model.value}>
-                                    {model.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="compareProvider" className="text-xs">Provider 2</Label>
+                        <Select value={compareProvider} onValueChange={(value) => {
+                          setCompareProvider(value);
+                          setCompareModel(providerModels[value][0].value);
+                        }}>
+                          <SelectTrigger id="compareProvider" className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="lovable">Lovable AI</SelectItem>
+                            <SelectItem value="openai">OpenAI</SelectItem>
+                            <SelectItem value="anthropic">Anthropic</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={compareModel} onValueChange={setCompareModel}>
+                          <SelectTrigger id="compareModel" className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {providerModels[compareProvider]?.map((model) => (
+                              <SelectItem key={model.value} value={model.value}>
+                                {model.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     )}
                   </div>
-                  
-                  <p className="text-xs text-muted-foreground">
-                    {comparisonMode 
-                      ? "Compare answers from two different providers side by side"
-                      : "Select a provider and model to regenerate the answer"}
-                  </p>
                 </div>
 
                 {/* Generate Button */}
                 <Button
                   onClick={() => handleRegenerateAnswer(comparisonMode)}
                   disabled={isRegenerating}
-                  className="w-full"
+                  className="w-full h-9"
+                  size="sm"
                 >
-                  <RotateCw className={`h-4 w-4 mr-2 ${isRegenerating ? "animate-spin" : ""}`} />
-                  {isRegenerating ? "Generating..." : comparisonMode ? "Compare Answers" : "Regenerate Answer"}
+                  <RotateCw className={`h-3 w-3 mr-2 ${isRegenerating ? "animate-spin" : ""}`} />
+                  {isRegenerating ? "Generating..." : comparisonMode ? "Compare" : "Generate"}
                 </Button>
 
                 {/* Answer Display */}
                 {(selectedQuestion.answer || selectedQuestion.answers?.length) && (
                   <div>
-                    <p className="text-sm text-muted-foreground mb-3">Generated Answers</p>
+                    <p className="text-xs text-muted-foreground mb-2">Generated Answers</p>
                     
                     {/* Show comparison view if we have multiple answers */}
                     {selectedQuestion.answers && selectedQuestion.answers.length >= 2 ? (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-3">
                         {selectedQuestion.answers.slice(-2).map((ans, idx) => (
-                          <div key={idx} className="bg-muted/50 p-4 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
+                          <div key={idx} className="bg-muted/50 p-3 rounded-lg">
+                            <div className="flex items-center justify-between mb-1">
                               <p className="text-xs font-semibold text-primary">
-                                {ans.provider === "lovable" ? "Lovable AI" : ans.provider === "openai" ? "OpenAI" : "Anthropic"}
+                                {ans.provider === "lovable" ? "Lovable" : ans.provider === "openai" ? "OpenAI" : "Anthropic"}
                               </p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-[10px] text-muted-foreground">
                                 {new Date(ans.timestamp).toLocaleTimeString()}
                               </p>
                             </div>
-                            <p className="text-xs text-muted-foreground mb-2">{ans.model}</p>
-                            <div className="max-h-[400px] overflow-y-auto">
-                              <p className="text-sm leading-relaxed">{ans.text}</p>
+                            <p className="text-[10px] text-muted-foreground mb-2">{ans.model}</p>
+                            <div className="max-h-[300px] overflow-y-auto">
+                              <p className="text-xs leading-relaxed">{ans.text}</p>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="bg-muted/50 p-4 rounded-lg">
-                        <p className="text-sm leading-relaxed">
+                      <div className="bg-muted/50 p-3 rounded-lg">
+                        <p className="text-xs leading-relaxed">
                           {selectedQuestion.answers?.[selectedQuestion.answers.length - 1]?.text || selectedQuestion.answer}
                         </p>
                         {selectedQuestion.answers?.[selectedQuestion.answers.length - 1] && (
-                          <p className="text-xs text-muted-foreground mt-2">
+                          <p className="text-[10px] text-muted-foreground mt-2">
                             {selectedQuestion.answers[selectedQuestion.answers.length - 1].provider} - {selectedQuestion.answers[selectedQuestion.answers.length - 1].model}
                           </p>
                         )}
@@ -572,41 +553,27 @@ const Playgrounds = () => {
                 )}
 
                 {selectedQuestion.feedback && (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-3">Feedback</p>
+                      <p className="text-xs text-muted-foreground mb-2">Feedback</p>
                       <div className="flex gap-2">
                         <Button
                           variant={selectedQuestion.feedback.thumbsUp ? "default" : "outline"}
                           size="sm"
                           disabled
                         >
-                          <ThumbsUp className="h-4 w-4" />
+                          <ThumbsUp className="h-3 w-3" />
                         </Button>
                         <Button
                           variant={!selectedQuestion.feedback.thumbsUp ? "default" : "outline"}
                           size="sm"
                           disabled
                         >
-                          <ThumbsDown className="h-4 w-4" />
+                          <ThumbsDown className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
-
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <p className="text-sm text-muted-foreground">Score</p>
-                        <p className="text-sm font-medium">{selectedQuestion.feedback.score}%</p>
-                      </div>
-                      <Progress value={selectedQuestion.feedback.score} />
-                    </div>
                   </div>
-                )}
-
-                {!selectedQuestion.answer && (
-                  <p className="text-sm text-muted-foreground italic">
-                    No answer generated yet
-                  </p>
                 )}
               </div>
             </>
