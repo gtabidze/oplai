@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Database, Cloud } from "lucide-react";
+import { Cloud } from "lucide-react";
 
 interface StorageProvider {
   id: string;
@@ -117,83 +117,72 @@ export default function Datasets() {
   }, {} as Record<string, StorageProvider[]>);
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen">
-      {/* Header */}
-      <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Database className="h-5 w-5 text-primary" />
+    <div className="flex-1 p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold">Datasets</h1>
+          <p className="text-muted-foreground mt-2">
+            Connect and sync your data from cloud storage providers and collaboration tools
+          </p>
+        </div>
+
+        {/* Introduction Card */}
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Cloud className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <h2 className="text-xl font-semibold">Connect Your Data Sources</h2>
+                <p className="text-sm text-muted-foreground">
+                  Sync your documents and data from popular cloud storage providers and collaboration tools. 
+                  Select a provider below to get started.
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-semibold">Datasets</h1>
-              <p className="text-xs text-muted-foreground">Connect your data sources</p>
+          </CardContent>
+        </Card>
+
+        {/* Storage Providers by Category */}
+        {Object.entries(groupedProviders).map(([category, providers]) => (
+          <div key={category} className="space-y-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold">{category}</h3>
+              <Badge variant="secondary" className="text-xs">
+                {providers.length}
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {providers.map((provider) => (
+                <Card
+                  key={provider.id}
+                  className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] hover:border-primary/50 group"
+                  onClick={() => handleProviderClick(provider)}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex flex-col items-center text-center space-y-4">
+                      <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center group-hover:from-primary/20 group-hover:to-primary/10 transition-colors">
+                        <img
+                          src={provider.logo}
+                          alt={`${provider.name} logo`}
+                          className="h-12 w-12 object-cover rounded-md"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-semibold">{provider.name}</h4>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {provider.description}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="p-6 space-y-8">
-          {/* Introduction Card */}
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Cloud className="h-6 w-6 text-primary" />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <h2 className="text-xl font-semibold">Connect Your Data Sources</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Sync your documents and data from popular cloud storage providers and collaboration tools. 
-                    Select a provider below to get started.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Storage Providers by Category */}
-          {Object.entries(groupedProviders).map(([category, providers]) => (
-            <div key={category} className="space-y-4">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold">{category}</h3>
-                <Badge variant="secondary" className="text-xs">
-                  {providers.length}
-                </Badge>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {providers.map((provider) => (
-                  <Card
-                    key={provider.id}
-                    className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] hover:border-primary/50 group"
-                    onClick={() => handleProviderClick(provider)}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex flex-col items-center text-center space-y-4">
-                        <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center group-hover:from-primary/20 group-hover:to-primary/10 transition-colors">
-                          <img
-                            src={provider.logo}
-                            alt={`${provider.name} logo`}
-                            className="h-12 w-12 object-cover rounded-md"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <h4 className="font-semibold">{provider.name}</h4>
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            {provider.description}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        ))}
       </div>
 
       {/* Coming Soon Dialog */}
