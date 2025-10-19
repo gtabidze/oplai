@@ -29,14 +29,14 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-border h-[72px] flex items-center px-4">
+      <SidebarHeader className="border-b border-border h-[72px] flex items-center justify-center px-4">
         {open ? (
-          <div className="flex flex-col gap-0.5">
-            <span className="font-orbitron font-bold text-2xl tracking-wider uppercase">OPLAI</span>
-            <span className="text-[10px] text-muted-foreground tracking-wide uppercase">Operational PlayBook</span>
+          <div className="flex flex-col items-center gap-0">
+            <span className="font-orbitron font-black text-3xl tracking-wider uppercase">OPLAI</span>
+            <span className="text-[9px] text-muted-foreground tracking-widest uppercase text-center">Operational PlayBook</span>
           </div>
         ) : (
-          <span className="font-orbitron font-bold text-xl">O</span>
+          <span className="font-orbitron font-black text-xl">O</span>
         )}
       </SidebarHeader>
       <SidebarContent>
