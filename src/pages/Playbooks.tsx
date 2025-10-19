@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, FileText, Calendar, Trash2, MessageSquare } from "lucide-react";
 import { usePlaybookSync } from "@/hooks/usePlaybookSync";
+import { useAuth } from "@/hooks/useAuth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +20,7 @@ import {
 
 const Playbooks = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [plaibooks, setPlaibooks] = useLocalStorage<Plaibook[]>("plaibooks", []);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   
@@ -33,6 +35,7 @@ const Playbooks = () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       questions: [],
+      user_id: user?.id || '',
     };
 
     setPlaibooks([...plaibooks, newPlaibook]);

@@ -7,6 +7,7 @@ export interface Plaibook {
   published?: boolean;
   questions?: SavedQuestion[];
   selectedDocuments?: string[]; // IDs of selected documents from inventory
+  user_id: string;
 }
 
 export interface GeneratedAnswer {

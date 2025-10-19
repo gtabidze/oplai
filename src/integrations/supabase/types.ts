@@ -130,6 +130,76 @@ export type Database = {
         }
         Relationships: []
       }
+      playbook_collaborators: {
+        Row: {
+          created_at: string
+          id: string
+          playbook_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          playbook_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          playbook_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_collaborators_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playbook_shares: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          playbook_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          playbook_id: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          playbook_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_shares_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playbooks: {
         Row: {
           content: string | null
@@ -346,6 +416,10 @@ export type Database = {
           full_name: string
           id: string
         }[]
+      }
+      is_playbook_collaborator: {
+        Args: { playbook_uuid: string; user_uuid: string }
+        Returns: boolean
       }
     }
     Enums: {

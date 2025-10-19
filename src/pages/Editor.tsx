@@ -6,6 +6,7 @@ import { useLocalStorage } from "@/lib/localStorage";
 import { Plaibook } from "@/lib/types";
 import { ExperimentSidebar } from "@/components/ExperimentSidebar";
 import { ActiveUsers } from "@/components/ActiveUsers";
+import { PlaybookCollaborators } from "@/components/PlaybookCollaborators";
 import { ArrowLeft, Eye, Upload, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -198,7 +199,12 @@ const Editor = () => {
 
         <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
           <div className="h-full border-l border-border bg-card/30 backdrop-blur-sm flex flex-col">
-            <div className="p-6 flex-1 flex flex-col overflow-y-auto">
+            <div className="p-6 flex-1 flex flex-col overflow-y-auto space-y-4">
+              <PlaybookCollaborators 
+                playbookId={currentPlaibook.id}
+                ownerId={currentPlaibook.user_id}
+              />
+              
               <ExperimentSidebar
                 plaibook={{
                   ...currentPlaibook,

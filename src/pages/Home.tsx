@@ -7,9 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Plus, FileText, MessageSquare, CheckCircle, TrendingUp, Clock, ArrowRight, Search } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/hooks/useAuth";
 
 const Home = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [plaibooks] = useLocalStorage<Plaibook[]>("plaibooks", []);
   const [stats, setStats] = useState({
     totalPlaibooks: 0,
@@ -60,6 +62,7 @@ const Home = () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       questions: [],
+      user_id: user?.id || '',
     };
 
     const updatedPlaibooks = [...plaibooks, newPlaibook];

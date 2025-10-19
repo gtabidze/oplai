@@ -18,6 +18,7 @@ import Configuration from "./pages/Configuration";
 import Account from "./pages/Account";
 import Monitor from "./pages/Monitor";
 import Published from "./pages/Published";
+import JoinPlaybook from "./pages/JoinPlaybook";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
           <Routes>
             {/* Public route without sidebar */}
             <Route path="/published/:id" element={<Published />} />
+            <Route path="/join/:token" element={<JoinPlaybook />} />
             
             {/* Routes with sidebar - protected */}
             <Route
