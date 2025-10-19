@@ -6,8 +6,25 @@ import { useLocalStorage } from "@/lib/localStorage";
 import { Plaibook } from "@/lib/types";
 import { ExperimentSidebar } from "@/components/ExperimentSidebar";
 import { ActiveUsers } from "@/components/ActiveUsers";
+import { PlaybookCollaborators } from "@/components/PlaybookCollaborators";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, Eye, Upload, ExternalLink } from "lucide-react";
+import { ArrowLeft, UserPlus, MoreVertical, Trash2, History } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -33,6 +50,8 @@ const Editor = () => {
   const [title, setTitle] = useState('');
   const [editorContent, setEditorContent] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+  const [showCollaborators, setShowCollaborators] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -159,6 +178,17 @@ const Editor = () => {
     window.open(publishUrl, '_blank');
   };
 
+  const handleDeletePlaybook = () => {
+    const updatedPlaibooks = plaibooks.filter((p) => p.id !== currentPlaibook?.id);
+    setPlaibooks(updatedPlaibooks);
+    toast.success("Playbook deleted successfully");
+    navigate('/playbooks');
+  };
+
+  const handleViewVersions = () => {
+    toast.info("Version history coming soon");
+  };
+
   if (!currentPlaibook) return null;
 
   return (
@@ -185,14 +215,35 @@ const Editor = () => {
           <div className="flex items-center gap-4">
             <ActiveUsers plaibookId={id!} />
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handlePreview}>
-                <Eye className="h-4 w-4 mr-2" />
-                Preview
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowCollaborators(true)}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Invite Collaborators
               </Button>
-              <Button variant="outline" size="sm" onClick={handlePublish}>
-                <Upload className="h-4 w-4 mr-2" />
-                Publish
-              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleViewVersions}>
+                    <History className="h-4 w-4 mr-2" />
+                    See Versions
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Playbook
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -249,6 +300,40 @@ const Editor = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Collaborators Dialog */}
+      <Dialog open={showCollaborators} onOpenChange={setShowCollaborators}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Manage Collaborators</DialogTitle>
+          </DialogHeader>
+          <PlaybookCollaborators 
+            playbookId={currentPlaibook.id}
+            ownerId={currentPlaibook.user_id}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Playbook</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{currentPlaibook?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePlaybook}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
