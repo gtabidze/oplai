@@ -194,18 +194,18 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
+        <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle className="text-2xl">System Prompts Configuration</DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="question" className="flex-1 flex flex-col overflow-hidden">
+        <Tabs defaultValue="question" className="flex-1 flex flex-col overflow-hidden px-6">
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="question">Question Generation</TabsTrigger>
             <TabsTrigger value="answer">Answer Generation</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="question" className="flex-1 flex flex-col gap-4 overflow-hidden mt-0">
+          <TabsContent value="question" className="flex-1 flex flex-col gap-4 overflow-hidden mt-0 data-[state=active]:flex">
             {questionPrompts.length > 0 ? (
               <>
                 <div className="space-y-2">
@@ -220,7 +220,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                     <SelectTrigger className="h-10">
                       <SelectValue placeholder="Select a prompt template" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[100]">
                       {questionPrompts.map((prompt) => (
                         <SelectItem key={prompt.id} value={prompt.id}>
                           {prompt.name}
@@ -246,7 +246,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                       <SelectTrigger className="h-10">
                         <SelectValue placeholder="Select version" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[100]">
                         {questionVersions.map((version) => (
                           <SelectItem key={version.id} value={version.id}>
                             Version {version.version_number} - {new Date(version.created_at).toLocaleDateString()}
@@ -284,7 +284,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
             )}
           </TabsContent>
 
-          <TabsContent value="answer" className="flex-1 flex flex-col gap-4 overflow-hidden mt-0">
+          <TabsContent value="answer" className="flex-1 flex flex-col gap-4 overflow-hidden mt-0 data-[state=active]:flex">
             {answerPrompts.length > 0 ? (
               <>
                 <div className="space-y-2">
@@ -299,7 +299,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                     <SelectTrigger className="h-10">
                       <SelectValue placeholder="Select a prompt template" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[100]">
                       {answerPrompts.map((prompt) => (
                         <SelectItem key={prompt.id} value={prompt.id}>
                           {prompt.name}
@@ -325,7 +325,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                       <SelectTrigger className="h-10">
                         <SelectValue placeholder="Select version" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[100]">
                         {answerVersions.map((version) => (
                           <SelectItem key={version.id} value={version.id}>
                             Version {version.version_number} - {new Date(version.created_at).toLocaleDateString()}
@@ -364,7 +364,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
