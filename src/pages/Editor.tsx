@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useLocalStorage } from "@/lib/localStorage";
 import { Plaibook } from "@/lib/types";
 import { ExperimentSidebar } from "@/components/ExperimentSidebar";
 import { ArrowLeft, Eye, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
 
 const Editor = () => {
   const { id } = useParams();
@@ -15,18 +17,49 @@ const Editor = () => {
   const [plaibooks, setPlaibooks] = useLocalStorage<Plaibook[]>('plaibooks', []);
   const [currentPlaibook, setCurrentPlaibook] = useState<Plaibook | null>(null);
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: "Start writing your AI agent's knowledge base...",
+      }),
+    ],
+    content: '',
+    editorProps: {
+      attributes: {
+        class: 'prose prose-lg max-w-none focus:outline-none min-h-[600px]',
+      },
+    },
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      if (!currentPlaibook) return;
+      
+      const timer = setTimeout(() => {
+        const updatedPlaibooks = plaibooks.map((p) =>
+          p.id === currentPlaibook.id
+            ? { ...p, content: html, updatedAt: Date.now() }
+            : p
+        );
+        setPlaibooks(updatedPlaibooks);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    },
+  });
 
   useEffect(() => {
     const plaibook = plaibooks.find((p) => p.id === id);
     if (plaibook) {
       setCurrentPlaibook(plaibook);
       setTitle(plaibook.title);
-      setContent(plaibook.content);
+      if (editor && plaibook.content !== editor.getHTML()) {
+        editor.commands.setContent(plaibook.content);
+      }
     } else {
       navigate('/');
     }
-  }, [id, plaibooks, navigate]);
+  }, [id, plaibooks, navigate, editor]);
 
   useEffect(() => {
     if (!currentPlaibook) return;
@@ -34,14 +67,14 @@ const Editor = () => {
     const timer = setTimeout(() => {
       const updatedPlaibooks = plaibooks.map((p) =>
         p.id === currentPlaibook.id
-          ? { ...p, title, content, updatedAt: Date.now() }
+          ? { ...p, title, updatedAt: Date.now() }
           : p
       );
       setPlaibooks(updatedPlaibooks);
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [title, content, currentPlaibook?.id]);
+  }, [title, currentPlaibook?.id]);
 
   const handlePreview = () => {
     toast.info("Preview functionality coming soon!");
@@ -89,18 +122,13 @@ const Editor = () => {
               placeholder="Untitled Plaibook"
             />
             
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="min-h-[600px] text-lg border-none focus-visible:ring-0 resize-none px-0 bg-transparent"
-              placeholder="Start writing your AI agent's knowledge base..."
-            />
+            <EditorContent editor={editor} className="text-lg" />
           </div>
         </div>
 
         <div className="w-96 border-l border-border bg-card/30 backdrop-blur-sm overflow-y-auto">
           <div className="p-6 h-full">
-            <ExperimentSidebar documentContent={content} />
+            <ExperimentSidebar documentContent={editor?.getText() || ''} />
           </div>
         </div>
       </div>
