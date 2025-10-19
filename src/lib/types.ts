@@ -4,6 +4,7 @@ export interface Plaibook {
   content: string;
   createdAt: number;
   updatedAt: number;
+  published?: boolean;
   questions?: SavedQuestion[];
 }
 

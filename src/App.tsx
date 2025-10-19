@@ -12,6 +12,7 @@ import Playbooks from "./pages/Playbooks";
 import Playgrounds from "./pages/Playgrounds";
 import Configuration from "./pages/Configuration";
 import Monitor from "./pages/Monitor";
+import Published from "./pages/Published";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,26 +24,37 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <SidebarProvider>
-            <div className="flex min-h-screen w-full">
-              <AppSidebar />
-              <div className="flex-1 flex flex-col">
-                <header className="h-12 flex items-center border-b border-border px-4">
-                  <SidebarTrigger />
-                </header>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/doc/:id" element={<Editor />} />
-                  <Route path="/playbooks" element={<Playbooks />} />
-                  <Route path="/playgrounds" element={<Playgrounds />} />
-                  <Route path="/configuration" element={<Configuration />} />
-                  <Route path="/monitor" element={<Monitor />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </div>
-            </div>
-          </SidebarProvider>
+          <Routes>
+            {/* Public route without sidebar */}
+            <Route path="/published/:id" element={<Published />} />
+            
+            {/* Routes with sidebar */}
+            <Route
+              path="/*"
+              element={
+                <SidebarProvider>
+                  <div className="flex min-h-screen w-full">
+                    <AppSidebar />
+                    <div className="flex-1 flex flex-col">
+                      <header className="h-12 flex items-center border-b border-border px-4">
+                        <SidebarTrigger />
+                      </header>
+                      <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/doc/:id" element={<Editor />} />
+                        <Route path="/playbooks" element={<Playbooks />} />
+                        <Route path="/playgrounds" element={<Playgrounds />} />
+                        <Route path="/configuration" element={<Configuration />} />
+                        <Route path="/monitor" element={<Monitor />} />
+                        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </div>
+                  </div>
+                </SidebarProvider>
+              }
+            />
+          </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>

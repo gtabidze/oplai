@@ -5,11 +5,17 @@ import { Input } from "@/components/ui/input";
 import { useLocalStorage } from "@/lib/localStorage";
 import { Plaibook } from "@/lib/types";
 import { ExperimentSidebar } from "@/components/ExperimentSidebar";
-import { ArrowLeft, Eye, Upload } from "lucide-react";
+import { ArrowLeft, Eye, Upload, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const Editor = () => {
   const { id } = useParams();
@@ -18,6 +24,7 @@ const Editor = () => {
   const [currentPlaibook, setCurrentPlaibook] = useState<Plaibook | null>(null);
   const [title, setTitle] = useState('');
   const [editorContent, setEditorContent] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -93,11 +100,32 @@ const Editor = () => {
   };
 
   const handlePreview = () => {
-    toast.info("Preview functionality coming soon!");
+    if (!currentPlaibook?.questions || currentPlaibook.questions.length === 0) {
+      toast.error("No questions to preview. Generate questions first.");
+      return;
+    }
+    setShowPreview(true);
   };
 
   const handlePublish = () => {
-    toast.info("Publish functionality coming soon!");
+    if (!currentPlaibook?.questions || currentPlaibook.questions.length === 0) {
+      toast.error("No questions to publish. Generate questions first.");
+      return;
+    }
+    
+    // Mark as published
+    const updatedPlaibooks = plaibooks.map((p) =>
+      p.id === currentPlaibook.id
+        ? { ...p, published: true, updatedAt: Date.now() }
+        : p
+    );
+    setPlaibooks(updatedPlaibooks);
+    
+    toast.success("Plaibook published successfully!");
+    
+    // Navigate to the published page
+    const publishUrl = `/published/${currentPlaibook.id}`;
+    window.open(publishUrl, '_blank');
   };
 
   if (!currentPlaibook) return null;
@@ -155,6 +183,31 @@ const Editor = () => {
           </div>
         </div>
       </div>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">{currentPlaibook?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            {currentPlaibook?.questions?.map((question, idx) => (
+              <div key={question.id} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-start gap-2">
+                  <span className="font-semibold text-sm text-muted-foreground">Q{idx + 1}:</span>
+                  <p className="font-medium">{question.question}</p>
+                </div>
+                {question.answer && (
+                  <div className="flex items-start gap-2 pl-6">
+                    <span className="font-semibold text-sm text-primary">A:</span>
+                    <p className="text-sm text-muted-foreground">{question.answer}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
