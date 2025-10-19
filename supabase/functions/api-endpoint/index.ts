@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
     const apiEndpoint = endpoint as APIEndpoint;
 
     // Check if endpoint is active
-    if (!apiEndpoint.is_active && apiEndpoint.id !== 'golden-datasets-api') {
+    if (!apiEndpoint.is_active && apiEndpoint.name !== 'Golden Datasets API') {
       return new Response(
         JSON.stringify({ error: 'API endpoint is not active' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

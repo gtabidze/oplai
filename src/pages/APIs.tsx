@@ -88,14 +88,13 @@ const APIs = () => {
       }));
 
       // Check if Golden Datasets API exists
-      const hasGoldenDataset = transformedEndpoints.some(e => e.id === 'golden-datasets-api');
+      const hasGoldenDataset = transformedEndpoints.some(e => e.name === 'Golden Datasets API');
       
       if (!hasGoldenDataset) {
         // Create Golden Datasets API if it doesn't exist
         const { data: goldenDataset, error: createError } = await supabase
           .from('api_endpoints')
           .insert({
-            id: 'golden-datasets-api',
             user_id: user.id,
             name: 'Golden Datasets API',
             is_active: true,
@@ -276,7 +275,8 @@ const APIs = () => {
 
   const toggleEndpointStatus = async (id: string) => {
     // Prevent deactivating Golden Datasets API
-    if (id === "golden-datasets-api") {
+    const isGolden = endpoints.find(e => e.id === id)?.name === 'Golden Datasets API';
+    if (isGolden) {
       toast.error("Golden Datasets API cannot be deactivated");
       return;
     }
@@ -312,7 +312,8 @@ const APIs = () => {
 
   const deleteEndpoint = async (id: string) => {
     // Prevent deleting Golden Datasets API
-    if (id === "golden-datasets-api") {
+    const isGolden = endpoints.find(e => e.id === id)?.name === 'Golden Datasets API';
+    if (isGolden) {
       toast.error("Golden Datasets API cannot be deleted");
       return;
     }
@@ -743,7 +744,7 @@ const APIs = () => {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    {endpoint.id === "golden-datasets-api" && (
+                    {endpoint.name === 'Golden Datasets API' && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -761,7 +762,7 @@ const APIs = () => {
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
-                    {endpoint.id !== "golden-datasets-api" && (
+                    {endpoint.name !== 'Golden Datasets API' && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -788,7 +789,7 @@ const APIs = () => {
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Selected Playbooks:</Label>
                     <div className="flex flex-wrap gap-2">
-                      {endpoint.id === "golden-datasets-api" ? (
+                      {endpoint.name === 'Golden Datasets API' ? (
                         <Badge variant="secondary">All Playbooks</Badge>
                       ) : (
                         endpoint.selectedPlaybooks.map((playbookId) => {
@@ -814,7 +815,7 @@ const APIs = () => {
                     </div>
                   </div>
 
-                  {endpoint.id === "golden-datasets-api" ? (
+                  {endpoint.name === 'Golden Datasets API' ? (
                     <div className="pt-2 border-t">
                       <p className="text-xs text-muted-foreground">
                         Created: {formatDate(endpoint.createdAt)}
