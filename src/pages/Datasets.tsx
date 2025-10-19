@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Cloud, CheckCircle, Loader2, RefreshCw, File, Calendar } from "lucide-react";
+import { Cloud, CheckCircle, Loader2, RefreshCw, File, Calendar, Trash2, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -123,6 +123,8 @@ export default function Datasets() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [syncedFiles, setSyncedFiles] = useState<any[]>([]);
+  const [selectedFile, setSelectedFile] = useState<any | null>(null);
+  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
 
   useEffect(() => {
     loadConnections();
@@ -232,6 +234,28 @@ export default function Datasets() {
     }
   };
 
+  const handleDeleteFile = async (fileId: string) => {
+    try {
+      const { error } = await supabase
+        .from('synced_files')
+        .delete()
+        .eq('id', fileId);
+
+      if (error) throw error;
+
+      toast.success('File deleted successfully');
+      await loadSyncedFiles();
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete file: ' + error.message);
+    }
+  };
+
+  const handleViewFile = (file: any) => {
+    setSelectedFile(file);
+    setIsFileDialogOpen(true);
+  };
+
   const handleProviderClick = async (provider: StorageProvider) => {
     if (provider.id === 'google-drive') {
       if (connectedProviders.has(provider.id)) {
@@ -336,6 +360,28 @@ export default function Datasets() {
                           </p>
                         )}
                       </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewFile(file);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteFile(file.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -416,6 +462,45 @@ export default function Datasets() {
           </div>
         ))}
       </div>
+
+      {/* File Content Dialog */}
+      <Dialog open={isFileDialogOpen} onOpenChange={setIsFileDialogOpen}>
+        <DialogContent className="sm:max-w-3xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <File className="h-5 w-5 text-primary" />
+              {selectedFile?.file_name}
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              <div className="flex items-center gap-4 text-xs">
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {selectedFile && new Date(selectedFile.synced_at).toLocaleDateString()}
+                </span>
+                {selectedFile?.file_type && (
+                  <Badge variant="outline" className="text-xs">
+                    {selectedFile.file_type}
+                  </Badge>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 max-h-[60vh] overflow-y-auto">
+            {selectedFile?.content ? (
+              <pre className="text-sm whitespace-pre-wrap bg-muted p-4 rounded-lg">
+                {selectedFile.content}
+              </pre>
+            ) : (
+              <p className="text-sm text-muted-foreground">No content available for this file.</p>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button onClick={() => setIsFileDialogOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Coming Soon Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
