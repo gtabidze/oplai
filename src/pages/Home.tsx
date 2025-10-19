@@ -90,7 +90,7 @@ const Home = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input 
             type="search"
-            placeholder="search all playbooks or questions"
+            placeholder="Search All Playbooks or Questions"
             className="pl-10 h-12 text-base"
           />
         </div>
@@ -105,7 +105,7 @@ const Home = () => {
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalPlaibooks}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Knowledge bases
+                Knowledge Bases
               </p>
             </CardContent>
           </Card>
@@ -118,7 +118,7 @@ const Home = () => {
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalQuestions}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Evaluation questions
+                Evaluation Questions
               </p>
             </CardContent>
           </Card>
@@ -131,7 +131,7 @@ const Home = () => {
             <CardContent>
               <div className="text-2xl font-bold">{stats.answeredQuestions}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                of {stats.totalQuestions} questions
+                Of {stats.totalQuestions} Questions
               </p>
             </CardContent>
           </Card>
@@ -157,7 +157,7 @@ const Home = () => {
                 Create Playbook
               </CardTitle>
               <CardDescription>
-                Start a new knowledge base with AI evaluation
+                Start a New Knowledge Base with AI Evaluation
               </CardDescription>
             </CardHeader>
           </Card>
@@ -169,7 +169,7 @@ const Home = () => {
                 View All Playbooks
               </CardTitle>
               <CardDescription>
-                Manage and organize your playbooks
+                Manage and Organize Your Playbooks
               </CardDescription>
             </CardHeader>
           </Card>
@@ -181,7 +181,7 @@ const Home = () => {
                 View Analytics
               </CardTitle>
               <CardDescription>
-                Check performance and insights
+                Check Performance and Insights
               </CardDescription>
             </CardHeader>
           </Card>
@@ -194,7 +194,7 @@ const Home = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Recent Playbooks</CardTitle>
-                  <CardDescription>Your most recently updated playbooks</CardDescription>
+                  <CardDescription>Your Most Recently Updated Playbooks</CardDescription>
                 </div>
                 <Button variant="ghost" onClick={() => navigate('/playbooks')}>
                   View All
@@ -221,7 +221,7 @@ const Home = () => {
                           </span>
                           <span className="flex items-center gap-1">
                             <MessageSquare className="h-3 w-3" />
-                            {stats.answered}/{stats.total} answered
+                            {stats.answered}/{stats.total} Answered
                           </span>
                         </div>
                       </div>
@@ -252,7 +252,7 @@ const Home = () => {
               <FileText className="h-16 w-16 text-muted-foreground mb-4" />
               <h3 className="text-xl font-semibold mb-2">Welcome to Oplai</h3>
               <p className="text-muted-foreground text-center mb-6 max-w-md">
-                Create your first playbook to start building your AI evaluation workspace
+                Create Your First Playbook to Start Building Your AI Evaluation Workspace
               </p>
               <Button onClick={handleCreateNew} size="lg">
                 <Plus className="h-5 w-5 mr-2" />
