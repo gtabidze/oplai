@@ -1,5 +1,5 @@
 import { Home, BookOpen, Monitor, LayoutGrid, Database, Settings } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -26,10 +26,14 @@ const items = [
 
 export function AppSidebar() {
   const { open } = useSidebar();
+  const navigate = useNavigate();
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-border h-[72px] flex items-center justify-center px-4">
+      <SidebarHeader 
+        className="border-b border-border h-[72px] flex items-center justify-center px-4 cursor-pointer hover:bg-accent/50 transition-colors"
+        onClick={() => navigate("/")}
+      >
         {open ? (
           <div className="flex flex-col items-center gap-0">
             <span className="font-orbitron font-black text-3xl tracking-wider uppercase">OPLAI</span>
