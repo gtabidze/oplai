@@ -7,6 +7,7 @@ import { Plaibook } from "@/lib/types";
 import { ExperimentSidebar } from "@/components/ExperimentSidebar";
 import { ActiveUsers } from "@/components/ActiveUsers";
 import { PlaybookCollaborators } from "@/components/PlaybookCollaborators";
+import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, Eye, Upload, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -27,6 +28,7 @@ import {
 const Editor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [plaibooks, setPlaibooks] = useLocalStorage<Plaibook[]>('plaibooks', []);
   const [currentPlaibook, setCurrentPlaibook] = useState<Plaibook | null>(null);
   const [title, setTitle] = useState('');
@@ -68,7 +70,18 @@ const Editor = () => {
   useEffect(() => {
     const plaibook = plaibooks.find((p) => p.id === id);
     if (plaibook) {
-      setCurrentPlaibook(plaibook);
+      // Ensure user_id is set for existing playbooks
+      if (!plaibook.user_id) {
+        const updatedPlaibook = { ...plaibook, user_id: user?.id || '' };
+        const updatedPlaibooks = plaibooks.map((p) =>
+          p.id === id ? updatedPlaibook : p
+        );
+        setPlaibooks(updatedPlaibooks);
+        setCurrentPlaibook(updatedPlaibook);
+      } else {
+        setCurrentPlaibook(plaibook);
+      }
+      
       setTitle(plaibook.title);
       setEditorContent(plaibook.content);
       if (editor && !editor.isFocused) {
