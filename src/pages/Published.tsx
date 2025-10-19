@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Plaibook } from "@/lib/types";
 import { getAllPlaibooks } from "@/lib/localStorage";
 import { Button } from "@/components/ui/button";
-import { Database, ArrowLeft } from "lucide-react";
+import { Database } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -40,16 +40,7 @@ const Published = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/")}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="text-2xl font-bold">{plaibook.title}</h1>
-          </div>
+          <h1 className="text-2xl font-bold">{plaibook.title}</h1>
           <Button
             variant="outline"
             size="sm"
