@@ -301,7 +301,7 @@ const Playgrounds = () => {
   return (
     <div className="flex-1 p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Playgrounds</h1>
+        <h1 className="text-3xl font-bold mb-6">Experiments</h1>
         <p className="text-muted-foreground mb-8">
           All questions generated across your playbooks
         </p>
