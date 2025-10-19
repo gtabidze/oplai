@@ -134,7 +134,6 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
   const [hasChanges, setHasChanges] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [promptContext, setPromptContext] = useState("");
-  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
 
   useEffect(() => {
     if (user && open) {
@@ -313,40 +312,28 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
       if (error) throw error;
 
       setNewPromptContent(data.prompt);
+      
+      // Generate title if name is not provided
+      if (!newPromptName.trim()) {
+        const { data: titleData, error: titleError } = await supabase.functions.invoke("generate-system-prompt", {
+          body: { 
+            type: "title",
+            context: `${createPromptType} prompt`,
+            promptContent: data.prompt.slice(0, 500)
+          },
+        });
+
+        if (!titleError && titleData?.prompt) {
+          setNewPromptName(titleData.prompt);
+        }
+      }
+      
       toast.success("AI-generated prompt created!");
     } catch (error: any) {
       console.error("Error generating prompt:", error);
       toast.error(error.message || "Failed to generate prompt with AI");
     } finally {
       setIsGeneratingPrompt(false);
-    }
-  };
-
-  const generateTitle = async () => {
-    if (!newPromptContent.trim()) {
-      toast.error("Please enter prompt content first");
-      return;
-    }
-
-    setIsGeneratingTitle(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("generate-system-prompt", {
-        body: { 
-          type: "title",
-          context: `${createPromptType} prompt`,
-          promptContent: newPromptContent.slice(0, 500)
-        },
-      });
-
-      if (error) throw error;
-
-      setNewPromptName(data.prompt);
-      toast.success("Title generated!");
-    } catch (error: any) {
-      console.error("Error generating title:", error);
-      toast.error("Failed to generate title");
-    } finally {
-      setIsGeneratingTitle(false);
     }
   };
 
@@ -593,28 +580,11 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             <div className="space-y-2">
               <Label>Prompt Name</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={newPromptName}
-                  onChange={(e) => setNewPromptName(e.target.value)}
-                  placeholder="e.g., Technical Documentation Prompt"
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="outline"
-                  onClick={generateTitle}
-                  disabled={isGeneratingTitle || !newPromptContent.trim()}
-                  title="Generate title with AI"
-                >
-                  {isGeneratingTitle ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+              <Input
+                value={newPromptName}
+                onChange={(e) => setNewPromptName(e.target.value)}
+                placeholder="e.g., Technical Documentation Prompt"
+              />
             </div>
 
             <div className="flex gap-2">
