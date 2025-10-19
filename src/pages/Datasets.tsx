@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,7 +9,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Cloud } from "lucide-react";
+import { Cloud, CheckCircle, Loader2, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 // Import logos
 import dropboxLogo from "@/assets/logos/dropbox.png";
@@ -113,13 +116,121 @@ const storageProviders: StorageProvider[] = [
 ];
 
 export default function Datasets() {
+  const { user } = useAuth();
   const [selectedProvider, setSelectedProvider] = useState<StorageProvider | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [connectedProviders, setConnectedProviders] = useState<Set<string>>(new Set());
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
 
-  const handleProviderClick = (provider: StorageProvider) => {
-    setSelectedProvider(provider);
-    setIsDialogOpen(true);
+  useEffect(() => {
+    loadConnections();
+  }, [user]);
+
+  const loadConnections = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('data_sources')
+      .select('provider, is_active')
+      .eq('user_id', user.id)
+      .eq('is_active', true);
+
+    if (!error && data) {
+      setConnectedProviders(new Set(data.map(d => d.provider)));
+    }
   };
+
+  const handleGoogleDriveConnect = async () => {
+    setIsConnecting(true);
+    try {
+      const clientId = 'YOUR_GOOGLE_CLIENT_ID'; // This should be retrieved from backend
+      const redirectUri = `${window.location.origin}/datasets`;
+      const scope = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/userinfo.email';
+      
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${clientId}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `response_type=code&` +
+        `scope=${encodeURIComponent(scope)}&` +
+        `access_type=offline&` +
+        `prompt=consent`;
+
+      window.location.href = authUrl;
+    } catch (error) {
+      console.error('Error connecting to Google Drive:', error);
+      toast.error('Failed to initiate Google Drive connection');
+      setIsConnecting(false);
+    }
+  };
+
+  const handleOAuthCallback = async (code: string) => {
+    try {
+      const redirectUri = `${window.location.origin}/datasets`;
+      
+      const { data, error } = await supabase.functions.invoke('google-drive-oauth', {
+        body: { code, redirect_uri: redirectUri }
+      });
+
+      if (error) throw error;
+
+      toast.success('Google Drive connected successfully!');
+      await loadConnections();
+      
+      // Clear the code from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (error: any) {
+      console.error('OAuth callback error:', error);
+      toast.error('Failed to connect Google Drive: ' + error.message);
+    }
+  };
+
+  const handleSync = async (provider: string) => {
+    if (!connectedProviders.has(provider)) {
+      toast.error('Please connect to this provider first');
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('google-drive-sync');
+
+      if (error) throw error;
+
+      toast.success(`Synced ${data.syncedFiles} files from ${data.totalFiles} total files`);
+    } catch (error: any) {
+      console.error('Sync error:', error);
+      toast.error('Failed to sync files: ' + error.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleProviderClick = async (provider: StorageProvider) => {
+    if (provider.id === 'google-drive') {
+      if (connectedProviders.has(provider.id)) {
+        // Already connected, show sync option
+        await handleSync(provider.id);
+      } else {
+        // Not connected, initiate OAuth
+        await handleGoogleDriveConnect();
+      }
+    } else {
+      // Show coming soon dialog for other providers
+      setSelectedProvider(provider);
+      setIsDialogOpen(true);
+    }
+  };
+
+  // Check for OAuth callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    
+    if (code && user) {
+      handleOAuthCallback(code);
+    }
+  }, [user]);
 
   const groupedProviders = storageProviders.reduce((acc, provider) => {
     if (!acc[provider.category]) {
@@ -171,9 +282,17 @@ export default function Datasets() {
               {providers.map((provider) => (
                 <Card
                   key={provider.id}
-                  className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] hover:border-primary/50 group"
+                  className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] hover:border-primary/50 group relative"
                   onClick={() => handleProviderClick(provider)}
                 >
+                  {connectedProviders.has(provider.id) && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Connected
+                      </Badge>
+                    </div>
+                  )}
                   <CardContent className="p-6">
                     <div className="flex flex-col items-center text-center space-y-4">
                       <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center group-hover:from-primary/20 group-hover:to-primary/10 transition-colors">
@@ -189,6 +308,30 @@ export default function Datasets() {
                           {provider.description}
                         </p>
                       </div>
+                      {connectedProviders.has(provider.id) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isSyncing}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSync(provider.id);
+                          }}
+                          className="w-full"
+                        >
+                          {isSyncing ? (
+                            <>
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              Syncing...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Sync Files
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
