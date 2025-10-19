@@ -1,4 +1,4 @@
-import { Home, BookOpen, ChartArea, LayoutGrid, Database, Settings, LogOut, User as UserIcon } from "lucide-react";
+import { Home, BookOpen, ChartArea, Workflow, Database, Settings, LogOut, User as UserIcon } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -31,7 +31,7 @@ const items = [
   { title: "Home", url: "/", icon: Home },
   { title: "Playbooks", url: "/playbooks", icon: BookOpen },
   { title: "Monitor", url: "/monitor", icon: ChartArea },
-  { title: "Playgrounds", url: "/playgrounds", icon: LayoutGrid },
+  { title: "Experiments", url: "/playgrounds", icon: Workflow },
   { title: "Datasets", url: "/datasets", icon: Database },
   { title: "Configuration", url: "/configuration", icon: Settings },
 ];
