@@ -370,10 +370,10 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions, onUpdateDocumen
             <CardHeader className="pb-2 pt-3 px-3">
               {editingQuestionId === q.id ? (
                 <div className="space-y-2">
-                  <Input
+                  <Textarea
                     value={editedQuestionText}
                     onChange={(e) => setEditedQuestionText(e.target.value)}
-                    className="text-sm"
+                    className="text-sm min-h-[80px]"
                     autoFocus
                   />
                   <div className="flex gap-1 justify-end">
