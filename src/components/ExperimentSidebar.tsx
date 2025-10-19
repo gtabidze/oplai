@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { ThumbsUp, ThumbsDown, Loader2, Sparkles, Plus } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Loader2, Sparkles, Plus, Trash2, RotateCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SavedQuestion, Plaibook } from "@/lib/types";
@@ -103,6 +103,13 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
     onUpdateQuestions(updatedQuestions);
   };
 
+  const handleDeleteQuestion = (questionId: string) => {
+    const updatedQuestions = questions.filter((q) => q.id !== questionId);
+    setQuestions(updatedQuestions);
+    onUpdateQuestions(updatedQuestions);
+    toast.success("Question deleted");
+  };
+
   return (
     <div className="h-full flex flex-col gap-4">
       <h2 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
@@ -151,7 +158,17 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
         {questions.map((q) => (
           <Card key={q.id} className="border-border/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">{q.question}</CardTitle>
+              <div className="flex items-start justify-between gap-2">
+                <CardTitle className="text-sm font-medium flex-1">{q.question}</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 -mt-1"
+                  onClick={() => handleDeleteQuestion(q.id)}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {!q.answer ? (
@@ -178,6 +195,26 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
                   <div className="p-3 bg-muted/50 rounded-md">
                     <p className="text-sm whitespace-pre-wrap">{q.answer}</p>
                   </div>
+
+                  <Button
+                    onClick={() => handleGenerateAnswer(q.id, q.question)}
+                    disabled={generatingAnswerId === q.id}
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {generatingAnswerId === q.id ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Regenerating...
+                      </>
+                    ) : (
+                      <>
+                        <RotateCw className="mr-2 h-4 w-4" />
+                        Regenerate Answer
+                      </>
+                    )}
+                  </Button>
 
                   <div className="flex items-center justify-between">
                     <div className="flex gap-2">
