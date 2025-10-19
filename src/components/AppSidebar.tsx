@@ -97,7 +97,7 @@ export function AppSidebar() {
       >
         {open ? (
           <div className="flex flex-col items-start gap-0">
-            <span className="font-inter font-normal text-2xl tracking-wider">OPLAI</span>
+            <span className="font-inter font-semibold text-2xl">Oplai</span>
           </div>
         ) : (
           <span className="font-orbitron font-black text-xl">O</span>
