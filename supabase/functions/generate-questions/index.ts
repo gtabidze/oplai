@@ -112,14 +112,30 @@ serve(async (req) => {
     const { documentContent, customSystemPrompt, llmProvider } = await req.json();
     const provider = llmProvider || 'lovable';
 
-    console.log('Generating questions for document with length:', documentContent?.length, 'using provider:', provider);
+    // Extract text from HTML
+    const textContent = documentContent
+      .replace(/<[^>]*>/g, ' ')  // Remove HTML tags
+      .replace(/&nbsp;/g, ' ')    // Replace &nbsp; with space
+      .replace(/\s+/g, ' ')       // Collapse multiple spaces
+      .trim();
+
+    console.log('Generating questions for document with length:', textContent?.length, 'using provider:', provider);
+
+    if (!textContent || textContent.length < 10) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Please add content to your playbook before generating questions. The knowledge base is empty.' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const defaultSystemPrompt = 'You are a helpful assistant that generates questions. Analyze the provided text and generate 8 questions that end users would ask about the facts, content, and subject matter presented in the text. Focus on the actual content, NOT meta-questions about the document itself. Return ONLY a JSON array of strings, nothing else.';
 
     const content = await callLLM(
       provider,
       customSystemPrompt || defaultSystemPrompt,
-      `Generate 8 questions that users would ask about the facts and content in this text:\n\n${documentContent}`
+      `Generate 8 questions that users would ask about the facts and content in this text:\n\n${textContent}`
     );
 
     console.log('AI response received');

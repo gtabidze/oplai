@@ -17,6 +17,7 @@ const Editor = () => {
   const [plaibooks, setPlaibooks] = useLocalStorage<Plaibook[]>('plaibooks', []);
   const [currentPlaibook, setCurrentPlaibook] = useState<Plaibook | null>(null);
   const [title, setTitle] = useState('');
+  const [editorContent, setEditorContent] = useState('');
 
   const editor = useEditor({
     extensions: [
@@ -33,6 +34,7 @@ const Editor = () => {
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
+      setEditorContent(html); // Update state immediately
       if (!currentPlaibook) return;
       
       const timer = setTimeout(() => {
@@ -42,6 +44,7 @@ const Editor = () => {
             : p
         );
         setPlaibooks(updatedPlaibooks);
+        setCurrentPlaibook(prev => prev ? { ...prev, content: html, updatedAt: Date.now() } : null);
       }, 500);
       
       return () => clearTimeout(timer);
@@ -53,6 +56,7 @@ const Editor = () => {
     if (plaibook) {
       setCurrentPlaibook(plaibook);
       setTitle(plaibook.title);
+      setEditorContent(plaibook.content);
       if (editor && !editor.isFocused) {
         editor.commands.setContent(plaibook.content);
       }
@@ -142,7 +146,10 @@ const Editor = () => {
         <div className="w-96 border-l border-border bg-card/30 backdrop-blur-sm overflow-y-auto">
           <div className="p-6 h-full">
             <ExperimentSidebar 
-              plaibook={currentPlaibook}
+              plaibook={{
+                ...currentPlaibook,
+                content: editorContent || currentPlaibook.content
+              }}
               onUpdateQuestions={handleUpdateQuestions}
             />
           </div>

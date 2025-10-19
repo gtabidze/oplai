@@ -112,14 +112,30 @@ serve(async (req) => {
     const { documentContent, question, customSystemPrompt, llmProvider } = await req.json();
     const provider = llmProvider || 'lovable';
 
-    console.log('Getting answer for question:', question, 'using provider:', provider);
+    // Extract text from HTML
+    const textContent = documentContent
+      .replace(/<[^>]*>/g, ' ')  // Remove HTML tags
+      .replace(/&nbsp;/g, ' ')    // Replace &nbsp; with space
+      .replace(/\s+/g, ' ')       // Collapse multiple spaces
+      .trim();
+
+    console.log('Getting answer for question:', question, 'using provider:', provider, 'content length:', textContent?.length);
+
+    if (!textContent || textContent.length < 10) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'The playbook content is empty. Please add knowledge base content first.' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const defaultSystemPrompt = 'You are a professional document expert. Answer questions based strictly on the document content. Keep answers concise (maximum 400 characters), direct, and without fluff. Provide only essential information.';
 
     const answer = await callLLM(
       provider,
       customSystemPrompt || defaultSystemPrompt,
-      `Document:\n\n${documentContent}\n\nQuestion: ${question}\n\nProvide a direct answer in 400 characters or less.`
+      `Document:\n\n${textContent}\n\nQuestion: ${question}\n\nProvide a direct answer in 400 characters or less.`
     );
     
     console.log('Answer generated successfully');
