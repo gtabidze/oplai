@@ -50,18 +50,35 @@ serve(async (req) => {
     const data = await response.json();
     console.log('AI response received');
     
-    const content = data.choices[0].message.content;
+    let content = data.choices[0].message.content;
+    
+    // Remove markdown code fences if present
+    content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '');
     
     // Try to parse as JSON array
     let questions;
     try {
       questions = JSON.parse(content);
+      // Ensure it's an array and filter out invalid entries
+      if (Array.isArray(questions)) {
+        questions = questions.filter((q: any) => 
+          typeof q === 'string' && 
+          q.trim().length > 3 && 
+          !q.match(/^[\[\]{}]$/) &&
+          !q.startsWith('```')
+        );
+      }
     } catch {
       // If not JSON, split by newlines and clean up
       questions = content
         .split('\n')
-        .filter((q: string) => q.trim().length > 0)
-        .map((q: string) => q.replace(/^\d+\.\s*/, '').replace(/^[-*]\s*/, '').trim())
+        .filter((q: string) => {
+          const trimmed = q.trim();
+          return trimmed.length > 3 && 
+                 !trimmed.match(/^[\[\]{}]$/) &&
+                 !trimmed.startsWith('```');
+        })
+        .map((q: string) => q.replace(/^\d+\.\s*/, '').replace(/^[-*]\s*/, '').replace(/^["']|["']$/g, '').trim())
         .slice(0, 10);
     }
 
