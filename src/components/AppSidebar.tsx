@@ -61,11 +61,11 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader 
-        className="border-b border-border h-[72px] flex items-center justify-center px-4 cursor-pointer hover:bg-accent/50 transition-colors"
+        className="border-b border-border h-[72px] flex items-center justify-start pl-4 cursor-pointer hover:bg-accent/50 transition-colors"
         onClick={() => navigate("/")}
       >
         {open ? (
-          <div className="flex flex-col items-center gap-0">
+          <div className="flex flex-col items-start gap-0">
             <span className="font-orbitron font-black text-3xl tracking-wider uppercase">OPLAI</span>
             <span className="text-[9px] text-muted-foreground tracking-widest uppercase text-center">Operational PlayBook</span>
           </div>
