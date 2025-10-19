@@ -255,7 +255,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-full sm:w-1/2 p-0 gap-0 overflow-hidden flex flex-col">
+        <SheetContent side="right" className="w-full sm:max-w-[50vw] p-0 gap-0 overflow-hidden flex flex-col">
           <SheetHeader className="px-6 pt-6 pb-4 border-b">
             <SheetTitle className="text-2xl">System Prompts Configuration</SheetTitle>
           </SheetHeader>
