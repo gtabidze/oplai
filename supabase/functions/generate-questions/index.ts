@@ -31,11 +31,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful assistant that generates insightful questions. Analyze the provided input text and write 8 questions potential readers should have about this document. Return ONLY a JSON array of strings, nothing else.'
+            content: 'You are a helpful assistant that generates questions. Analyze the provided text and generate 8 questions that end users would ask about the facts, content, and subject matter presented in the text. Focus on the actual content, NOT meta-questions about the document itself. Return ONLY a JSON array of strings, nothing else.'
           },
           {
             role: 'user',
-            content: `Analyze this document and generate 8 questions:\n\n${documentContent}`
+            content: `Generate 8 questions that users would ask about the facts and content in this text:\n\n${documentContent}`
           }
         ],
       }),

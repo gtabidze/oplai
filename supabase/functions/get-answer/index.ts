@@ -31,11 +31,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a professional document expert. Review the provided document carefully and answer the question in a concise, clear, and professional tone. Base your answer strictly on the document content.'
+            content: 'You are a professional document expert. Answer questions based strictly on the document content. Keep answers concise (maximum 400 characters), direct, and without fluff. Provide only essential information.'
           },
           {
             role: 'user',
-            content: `Document:\n\n${documentContent}\n\nQuestion: ${question}\n\nProvide a concise and professional answer based on the document.`
+            content: `Document:\n\n${documentContent}\n\nQuestion: ${question}\n\nProvide a direct answer in 400 characters or less.`
           }
         ],
       }),
