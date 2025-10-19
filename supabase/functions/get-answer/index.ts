@@ -5,8 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-async function callLLM(provider: string, systemPrompt: string, userPrompt: string) {
-  console.log('Calling LLM with provider:', provider);
+async function callLLM(provider: string, systemPrompt: string, userPrompt: string, model?: string) {
+  console.log('Calling LLM with provider:', provider, 'model:', model);
   
   if (provider === 'openai') {
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
@@ -21,7 +21,7 @@ async function callLLM(provider: string, systemPrompt: string, userPrompt: strin
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: model || 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -52,7 +52,7 @@ async function callLLM(provider: string, systemPrompt: string, userPrompt: strin
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: model || 'claude-sonnet-4-5',
         max_tokens: 1024,
         system: systemPrompt,
         messages: [
@@ -84,7 +84,7 @@ async function callLLM(provider: string, systemPrompt: string, userPrompt: strin
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: model || 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -109,7 +109,7 @@ serve(async (req) => {
   }
 
   try {
-    const { documentContent, question, customSystemPrompt, llmProvider } = await req.json();
+    const { documentContent, question, customSystemPrompt, llmProvider, model } = await req.json();
     const provider = llmProvider || 'lovable';
 
     // Extract text from HTML
@@ -119,7 +119,7 @@ serve(async (req) => {
       .replace(/\s+/g, ' ')       // Collapse multiple spaces
       .trim();
 
-    console.log('Getting answer for question:', question, 'using provider:', provider, 'content length:', textContent?.length);
+    console.log('Getting answer for question:', question, 'using provider:', provider, 'model:', model, 'content length:', textContent?.length);
 
     if (!textContent || textContent.length < 10) {
       return new Response(
@@ -135,7 +135,8 @@ serve(async (req) => {
     const answer = await callLLM(
       provider,
       customSystemPrompt || defaultSystemPrompt,
-      `Document:\n\n${textContent}\n\nQuestion: ${question}\n\nProvide a direct answer in 400 characters or less.`
+      `Document:\n\n${textContent}\n\nQuestion: ${question}\n\nProvide a direct answer in 400 characters or less.`,
+      model
     );
     
     console.log('Answer generated successfully');

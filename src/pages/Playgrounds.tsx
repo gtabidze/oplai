@@ -17,10 +17,18 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ThumbsUp, ThumbsDown, Trash2, Edit2, RotateCw, Save, X } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +53,31 @@ const Playgrounds = () => {
   const [editedQuestion, setEditedQuestion] = useState("");
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [deleteQuestionId, setDeleteQuestionId] = useState<string | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<string>("lovable");
+  const [selectedModel, setSelectedModel] = useState<string>("google/gemini-2.5-flash");
+
+  const providerModels: Record<string, { value: string; label: string }[]> = {
+    lovable: [
+      { value: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash (Default)" },
+      { value: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+      { value: "google/gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite" },
+      { value: "openai/gpt-5", label: "GPT-5" },
+      { value: "openai/gpt-5-mini", label: "GPT-5 Mini" },
+      { value: "openai/gpt-5-nano", label: "GPT-5 Nano" },
+    ],
+    openai: [
+      { value: "gpt-4o", label: "GPT-4o" },
+      { value: "gpt-4o-mini", label: "GPT-4o Mini" },
+      { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
+      { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
+    ],
+    anthropic: [
+      { value: "claude-sonnet-4-5", label: "Claude Sonnet 4.5" },
+      { value: "claude-opus-4-1-20250805", label: "Claude Opus 4.1" },
+      { value: "claude-sonnet-4-20250514", label: "Claude Sonnet 4" },
+      { value: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku" },
+    ],
+  };
 
   useEffect(() => {
     loadAllQuestions();
@@ -142,14 +175,14 @@ const Playgrounds = () => {
       }
 
       const customPrompt = localStorage.getItem("answerSystemPrompt");
-      const llmProvider = localStorage.getItem("llmProvider") || "lovable";
 
       const { data, error } = await supabase.functions.invoke("get-answer", {
         body: {
           documentContent: plaibook.content,
           question: selectedQuestion.question,
           customSystemPrompt: customPrompt,
-          llmProvider,
+          llmProvider: selectedProvider,
+          model: selectedModel,
         },
       });
 
@@ -176,7 +209,7 @@ const Playgrounds = () => {
         ...selectedQuestion,
         answer: data.answer,
       });
-      toast.success("Answer regenerated successfully");
+      toast.success(`Answer regenerated with ${selectedProvider} - ${selectedModel}`);
     } catch (error) {
       console.error("Error regenerating answer:", error);
       toast.error("Failed to regenerate answer");
@@ -308,6 +341,47 @@ const Playgrounds = () => {
                   ) : (
                     <p className="text-base">{selectedQuestion.question}</p>
                   )}
+                </div>
+
+                {/* LLM Provider Selection */}
+                <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+                  <div className="space-y-2">
+                    <Label htmlFor="provider">AI Provider</Label>
+                    <Select value={selectedProvider} onValueChange={(value) => {
+                      setSelectedProvider(value);
+                      // Reset to first model of new provider
+                      setSelectedModel(providerModels[value][0].value);
+                    }}>
+                      <SelectTrigger id="provider">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lovable">Lovable AI</SelectItem>
+                        <SelectItem value="openai">OpenAI</SelectItem>
+                        <SelectItem value="anthropic">Anthropic</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="model">Model</Label>
+                    <Select value={selectedModel} onValueChange={setSelectedModel}>
+                      <SelectTrigger id="model">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {providerModels[selectedProvider]?.map((model) => (
+                          <SelectItem key={model.value} value={model.value}>
+                            {model.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground">
+                    Select a provider and model to regenerate the answer
+                  </p>
                 </div>
 
                 {selectedQuestion.answer && (
