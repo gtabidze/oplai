@@ -18,10 +18,80 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { History, Save, Plus } from "lucide-react";
+import { History, Save, Plus, Sparkles, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+
+const DEFAULT_QUESTION_PROMPT = `# Role Definition
+You are an expert question generator specializing in creating insightful, relevant questions based on document content.
+
+# Task Description
+Analyze the provided document and generate questions that end users would naturally ask about the facts, content, and subject matter presented. Focus on the actual content and information within the document.
+
+# Output Format
+- Return ONLY a JSON array of strings
+- Each string should be a complete, well-formed question
+- Do not include any explanatory text or markdown formatting
+- Example: ["What is the main topic?", "How does X relate to Y?"]
+
+# Best Practices
+- Questions should be clear, specific, and directly related to document content
+- Vary question complexity (mix of simple recall and deeper understanding)
+- Focus on key concepts, important details, and relationships between ideas
+- Ensure questions are answerable based on the document content
+- Use natural language that real users would use
+
+# Restrictions
+- Do NOT generate meta-questions about the document itself (e.g., "What is this document about?")
+- Do NOT ask about document structure, format, or authorship
+- Do NOT include questions about information not present in the document
+- Do NOT generate yes/no questions exclusively
+- Do NOT include numbering or prefixes in the questions
+
+# Considerations
+- Consider the document's domain and adjust question complexity accordingly
+- Account for different user knowledge levels
+- Prioritize actionable and practical questions
+- Ensure diversity in question types (what, how, why, when, where)`;
+
+const DEFAULT_ANSWER_PROMPT = `# Role Definition
+You are an expert AI assistant specialized in providing accurate, comprehensive answers based strictly on provided document content.
+
+# Task Description
+Read the provided document content and answer the given question using ONLY information explicitly stated or directly inferable from the document.
+
+# Output Format
+- Provide a clear, direct answer to the question
+- Use plain text without markdown formatting unless specifically needed for lists or structure
+- Keep answers concise but complete (2-5 sentences for simple questions, more for complex ones)
+- If the answer requires multiple points, use structured formatting
+
+# Best Practices
+- Start with the most direct answer to the question
+- Support your answer with specific details from the document
+- Use exact terminology and phrasing from the source when appropriate
+- Maintain objectivity and factual accuracy
+- Cite specific sections or concepts when relevant
+
+# Restrictions
+- Do NOT add information not present in the document
+- Do NOT make assumptions or inferences beyond what the document supports
+- Do NOT include personal opinions or external knowledge
+- Do NOT say "according to the document" or "the document states" (assume document context)
+- Do NOT apologize or use hedging language excessively
+
+# Considerations
+- If the question cannot be fully answered from the document, state what CAN be answered
+- For ambiguous questions, address the most likely interpretation
+- If multiple answers are valid, acknowledge this and provide the most relevant one
+- Match the answer's complexity to the question's complexity
+- Ensure the answer is self-contained and understandable
+
+# Answer Structure
+- Direct answer first
+- Supporting details and explanation
+- Additional relevant context if needed (keep brief)`;
 
 interface Prompt {
   id: string;
@@ -62,6 +132,8 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
   const [newPromptContent, setNewPromptContent] = useState("");
   const [createPromptType, setCreatePromptType] = useState<"question" | "answer">("question");
   const [hasChanges, setHasChanges] = useState(false);
+  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
+  const [promptContext, setPromptContext] = useState("");
 
   useEffect(() => {
     if (user && open) {
@@ -219,6 +291,36 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
     }
   };
 
+  const loadDefaultPrompt = () => {
+    const defaultPrompt = createPromptType === "question" 
+      ? DEFAULT_QUESTION_PROMPT 
+      : DEFAULT_ANSWER_PROMPT;
+    setNewPromptContent(defaultPrompt);
+    toast.success("Default prompt loaded!");
+  };
+
+  const generatePromptWithAI = async () => {
+    setIsGeneratingPrompt(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-system-prompt", {
+        body: { 
+          type: createPromptType,
+          context: promptContext.trim() || undefined
+        },
+      });
+
+      if (error) throw error;
+
+      setNewPromptContent(data.prompt);
+      toast.success("AI-generated prompt created!");
+    } catch (error: any) {
+      console.error("Error generating prompt:", error);
+      toast.error(error.message || "Failed to generate prompt with AI");
+    } finally {
+      setIsGeneratingPrompt(false);
+    }
+  };
+
   const createPrompt = async () => {
     if (!newPromptName.trim() || !newPromptContent.trim()) {
       toast.error("Please provide both name and content");
@@ -252,6 +354,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
       toast.success("Prompt created successfully!");
       setNewPromptName("");
       setNewPromptContent("");
+      setPromptContext("");
       setIsCreateDialogOpen(false);
       loadPrompts();
     } catch (error: any) {
@@ -453,34 +556,82 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
     </Sheet>
 
     <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New {createPromptType === "question" ? "Question" : "Answer"} Prompt</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="prompt-name">Prompt Name</Label>
+              <Label>Prompt Name</Label>
               <Input
-                id="prompt-name"
-                placeholder="e.g., Default, Creative, Technical"
                 value={newPromptName}
                 onChange={(e) => setNewPromptName(e.target.value)}
+                placeholder="e.g., Technical Documentation Prompt"
               />
             </div>
+
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={loadDefaultPrompt}
+                className="flex-1"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Load Default Template
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={generatePromptWithAI}
+                disabled={isGeneratingPrompt}
+                className="flex-1"
+              >
+                {isGeneratingPrompt ? (
+                  <>
+                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate with AI
+                  </>
+                )}
+              </Button>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="prompt-content">Content</Label>
+              <Label>Context for AI Generation (Optional)</Label>
               <Textarea
-                id="prompt-content"
-                rows={10}
-                placeholder="Enter your prompt content..."
+                value={promptContext}
+                onChange={(e) => setPromptContext(e.target.value)}
+                className="min-h-[80px]"
+                placeholder="Describe your use case, domain, or specific requirements for the AI to generate a better prompt..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Prompt Content</Label>
+              <Textarea
                 value={newPromptContent}
                 onChange={(e) => setNewPromptContent(e.target.value)}
-                className="font-mono"
+                className="min-h-[400px] font-mono text-sm leading-relaxed"
+                placeholder="Enter your system prompt with proper structure including role definition, task description, output format, best practices, restrictions, and considerations..."
               />
             </div>
-            <Button onClick={createPrompt} className="w-full">
-              Create Prompt
-            </Button>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => {
+                setIsCreateDialogOpen(false);
+                setNewPromptName("");
+                setNewPromptContent("");
+                setPromptContext("");
+              }}>
+                Cancel
+              </Button>
+              <Button onClick={createPrompt}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Prompt
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
