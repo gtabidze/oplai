@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { ThumbsUp, ThumbsDown, Loader2, Sparkles, Plus, Trash2, RotateCw, Settings, FileText, X, Edit2, Save } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Loader2, Sparkles, Plus, Trash2, RotateCw, Settings2, FileText, X, Edit2, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SavedQuestion, Plaibook } from "@/lib/types";
@@ -287,7 +287,7 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions, onUpdateDocumen
           onClick={() => setShowSettings(true)}
           className="h-8 w-8"
         >
-          <Settings className="h-4 w-4" />
+          <Settings2 className="h-4 w-4" />
         </Button>
       </div>
 
