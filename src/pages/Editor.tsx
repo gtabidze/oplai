@@ -76,6 +76,18 @@ const Editor = () => {
     return () => clearTimeout(timer);
   }, [title, currentPlaibook?.id]);
 
+  const handleUpdateQuestions = (questions: any[]) => {
+    if (!currentPlaibook) return;
+    
+    const updatedPlaibooks = plaibooks.map((p) =>
+      p.id === currentPlaibook.id
+        ? { ...p, questions, updatedAt: Date.now() }
+        : p
+    );
+    setPlaibooks(updatedPlaibooks);
+    setCurrentPlaibook({ ...currentPlaibook, questions });
+  };
+
   const handlePreview = () => {
     toast.info("Preview functionality coming soon!");
   };
@@ -128,7 +140,10 @@ const Editor = () => {
 
         <div className="w-96 border-l border-border bg-card/30 backdrop-blur-sm overflow-y-auto">
           <div className="p-6 h-full">
-            <ExperimentSidebar documentContent={editor?.getText() || ''} />
+            <ExperimentSidebar 
+              plaibook={currentPlaibook}
+              onUpdateQuestions={handleUpdateQuestions}
+            />
           </div>
         </div>
       </div>

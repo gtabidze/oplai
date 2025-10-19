@@ -4,6 +4,14 @@ export interface Plaibook {
   content: string;
   createdAt: number;
   updatedAt: number;
+  questions?: SavedQuestion[];
+}
+
+export interface SavedQuestion {
+  id: string;
+  question: string;
+  answer?: string;
+  feedback?: Feedback;
 }
 
 export interface Question {
@@ -17,7 +25,6 @@ export interface Answer {
 }
 
 export interface Feedback {
-  questionId: string;
-  helpful: boolean | null;
-  score: number | null;
+  thumbsUp: boolean;
+  score: number;
 }

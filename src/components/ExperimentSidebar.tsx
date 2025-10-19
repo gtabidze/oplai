@@ -1,227 +1,225 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ThumbsUp, ThumbsDown, Loader2, Sparkles } from "lucide-react";
-import { Question, Answer } from "@/lib/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
+import { ThumbsUp, ThumbsDown, Loader2, Sparkles, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Slider } from "@/components/ui/slider";
+import { SavedQuestion, Plaibook } from "@/lib/types";
 
 interface ExperimentSidebarProps {
-  documentContent: string;
+  plaibook: Plaibook | null;
+  onUpdateQuestions: (questions: SavedQuestion[]) => void;
 }
 
-export const ExperimentSidebar = ({ documentContent }: ExperimentSidebarProps) => {
+export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSidebarProps) => {
+  const [questions, setQuestions] = useState<SavedQuestion[]>([]);
+  const [newQuestion, setNewQuestion] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isAnswering, setIsAnswering] = useState(false);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
-  const [answer, setAnswer] = useState<Answer | null>(null);
-  const [helpfulnessScore, setHelpfulnessScore] = useState([50]);
+  const [generatingAnswerId, setGeneratingAnswerId] = useState<string | null>(null);
 
-  const handleStartExperiment = async () => {
-    if (!documentContent.trim()) {
-      toast.error("Please write some content in the document first");
-      return;
+  useEffect(() => {
+    if (plaibook?.questions) {
+      setQuestions(plaibook.questions);
     }
+  }, [plaibook?.id]);
 
+  const handleGenerateQuestions = async () => {
+    if (!plaibook) return;
+    
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-questions', {
-        body: { documentContent }
+      const { data, error } = await supabase.functions.invoke("generate-questions", {
+        body: { documentContent: plaibook.content },
       });
 
       if (error) throw error;
 
-      const questionsList: Question[] = data.questions.map((q: string, idx: number) => ({
-        id: `q-${idx}`,
-        text: q
+      const newQuestions: SavedQuestion[] = (data.questions || []).map((q: string) => ({
+        id: crypto.randomUUID(),
+        question: q,
       }));
-      
-      setQuestions(questionsList);
+
+      const updatedQuestions = [...questions, ...newQuestions];
+      setQuestions(updatedQuestions);
+      onUpdateQuestions(updatedQuestions);
       toast.success("Questions generated successfully!");
     } catch (error) {
-      console.error('Error generating questions:', error);
+      console.error("Error generating questions:", error);
       toast.error("Failed to generate questions. Please try again.");
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleQuestionClick = async (question: Question) => {
-    setSelectedQuestion(question);
-    setIsAnswering(true);
-    setAnswer(null);
-    setHelpfulnessScore([50]);
+  const handleAddManualQuestion = () => {
+    if (!newQuestion.trim()) return;
 
+    const newQ: SavedQuestion = {
+      id: crypto.randomUUID(),
+      question: newQuestion.trim(),
+    };
+
+    const updatedQuestions = [...questions, newQ];
+    setQuestions(updatedQuestions);
+    onUpdateQuestions(updatedQuestions);
+    setNewQuestion("");
+    toast.success("Question added!");
+  };
+
+  const handleGenerateAnswer = async (questionId: string, questionText: string) => {
+    if (!plaibook) return;
+
+    setGeneratingAnswerId(questionId);
     try {
-      const { data, error } = await supabase.functions.invoke('get-answer', {
-        body: { 
-          documentContent,
-          question: question.text 
-        }
+      const { data, error } = await supabase.functions.invoke("get-answer", {
+        body: { documentContent: plaibook.content, question: questionText },
       });
 
       if (error) throw error;
 
-      setAnswer({
-        questionId: question.id,
-        text: data.answer
-      });
+      const updatedQuestions = questions.map((q) =>
+        q.id === questionId ? { ...q, answer: data.answer || "" } : q
+      );
+      setQuestions(updatedQuestions);
+      onUpdateQuestions(updatedQuestions);
+      toast.success("Answer generated!");
     } catch (error) {
-      console.error('Error getting answer:', error);
-      toast.error("Failed to get answer. Please try again.");
+      console.error("Error getting answer:", error);
+      toast.error("Failed to generate answer. Please try again.");
     } finally {
-      setIsAnswering(false);
+      setGeneratingAnswerId(null);
     }
   };
 
-  const handleFeedback = (helpful: boolean) => {
-    toast.success(`Feedback recorded: ${helpful ? 'Helpful' : 'Not helpful'}`);
+  const handleFeedback = (questionId: string, thumbsUp: boolean, score?: number) => {
+    const updatedQuestions = questions.map((q) =>
+      q.id === questionId
+        ? { ...q, feedback: { thumbsUp, score: score ?? q.feedback?.score ?? 50 } }
+        : q
+    );
+    setQuestions(updatedQuestions);
+    onUpdateQuestions(updatedQuestions);
   };
 
-  if (questions.length === 0) {
-    return (
-      <Card className="h-full bg-card border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-accent" />
-            Experiment
-          </CardTitle>
-          <CardDescription>
-            Test your AI agent's knowledge
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button 
-            onClick={handleStartExperiment} 
-            disabled={isGenerating}
-            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              'Start Experiment'
-            )}
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (selectedQuestion && answer) {
-    return (
-      <Card className="h-full bg-card border-border flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-accent" />
-            Q&A Testing
-          </CardTitle>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => {
-              setSelectedQuestion(null);
-              setAnswer(null);
-            }}
-          >
-            ← Back to questions
-          </Button>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto space-y-4">
-          <div>
-            <h4 className="font-semibold mb-2 text-accent">Question:</h4>
-            <p className="text-sm text-muted-foreground">{selectedQuestion.text}</p>
-          </div>
-          
-          <Alert className="bg-muted/50 border-primary/20">
-            <AlertDescription>
-              <h4 className="font-semibold mb-2">Answer:</h4>
-              {isAnswering ? (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating answer...
-                </div>
-              ) : (
-                <p className="text-sm whitespace-pre-wrap">{answer.text}</p>
-              )}
-            </AlertDescription>
-          </Alert>
-
-          {!isAnswering && (
-            <div className="space-y-4 pt-4 border-t border-border">
-              <div>
-                <h4 className="font-semibold mb-3">Feedback</h4>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleFeedback(true)}
-                    className="flex-1 hover:bg-green-500/10 hover:border-green-500"
-                  >
-                    <ThumbsUp className="h-4 w-4 mr-2" />
-                    Helpful
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleFeedback(false)}
-                    className="flex-1 hover:bg-destructive/10 hover:border-destructive"
-                  >
-                    <ThumbsDown className="h-4 w-4 mr-2" />
-                    Not Helpful
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Helpfulness Score: {helpfulnessScore[0]}
-                </label>
-                <Slider
-                  value={helpfulnessScore}
-                  onValueChange={setHelpfulnessScore}
-                  max={100}
-                  step={1}
-                  className="w-full"
-                />
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="h-full bg-card border-border flex flex-col">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-accent" />
-          Sample Questions
-        </CardTitle>
-        <CardDescription>
-          Click a question to test the AI's answer
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto">
-        <div className="space-y-2">
-          {questions.map((question) => (
-            <Button
-              key={question.id}
-              variant="ghost"
-              className="w-full justify-start text-left h-auto py-3 px-4 hover:bg-primary/10 hover:text-primary"
-              onClick={() => handleQuestionClick(question)}
-            >
-              <span className="text-sm">{question.text}</span>
-            </Button>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="h-full flex flex-col gap-4">
+      <h2 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+        Experiment
+      </h2>
+
+      {/* Add Question Input */}
+      <div className="flex gap-2">
+        <Input
+          placeholder="Add a question..."
+          value={newQuestion}
+          onChange={(e) => setNewQuestion(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleAddManualQuestion()}
+        />
+        <Button
+          size="icon"
+          onClick={handleAddManualQuestion}
+          disabled={!newQuestion.trim()}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Generate Questions Button */}
+      <Button
+        onClick={handleGenerateQuestions}
+        disabled={isGenerating || !plaibook}
+        variant="outline"
+        className="w-full"
+      >
+        {isGenerating ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Generating...
+          </>
+        ) : (
+          <>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate Questions
+          </>
+        )}
+      </Button>
+
+      {/* Questions List */}
+      <div className="flex-1 overflow-y-auto space-y-3">
+        {questions.map((q) => (
+          <Card key={q.id} className="border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">{q.question}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {!q.answer ? (
+                <Button
+                  onClick={() => handleGenerateAnswer(q.id, q.question)}
+                  disabled={generatingAnswerId === q.id}
+                  size="sm"
+                  className="w-full"
+                >
+                  {generatingAnswerId === q.id ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate Answer
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <>
+                  <div className="p-3 bg-muted/50 rounded-md">
+                    <p className="text-sm whitespace-pre-wrap">{q.answer}</p>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-2">
+                      <Button
+                        variant={q.feedback?.thumbsUp === true ? "default" : "outline"}
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleFeedback(q.id, true)}
+                      >
+                        <ThumbsUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={q.feedback?.thumbsUp === false ? "default" : "outline"}
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleFeedback(q.id, false)}
+                      >
+                        <ThumbsDown className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Slider
+                        value={[q.feedback?.score ?? 50]}
+                        onValueChange={(value) =>
+                          handleFeedback(q.id, q.feedback?.thumbsUp ?? true, value[0])
+                        }
+                        max={100}
+                        step={1}
+                        className="w-24"
+                      />
+                      <span className="text-xs text-muted-foreground w-10 text-right">
+                        {q.feedback?.score ?? 50}/100
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 };
