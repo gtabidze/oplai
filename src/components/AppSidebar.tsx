@@ -100,50 +100,86 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t border-border p-2">
-        {user && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-accent transition-colors">
-                <Avatar className="h-8 w-8 flex-shrink-0">
-                  {profile?.avatar_url && (
-                    <AvatarImage src={profile.avatar_url} />
-                  )}
-                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                    {profile?.full_name
-                      ?.split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .toUpperCase()
-                      .slice(0, 2) || user.email?.[0].toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                {open && (
-                  <div className="flex-1 text-left min-w-0">
-                    <p className="text-xs font-medium truncate">
-                      {profile?.full_name || user.email}
-                    </p>
-                  </div>
-                )}
-              </button>
-            </DropdownMenuTrigger>
-              <DropdownMenuContent side="right" align="end" className="w-48">
-              <DropdownMenuItem onClick={() => navigate("/account")}>
-                <UserIcon className="mr-2 h-4 w-4" />
-                <span>Account</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/configuration")}>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        {open ? (
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              {user && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-accent transition-colors">
+                      <Avatar className="h-8 w-8 flex-shrink-0">
+                        {profile?.avatar_url && (
+                          <AvatarImage src={profile.avatar_url} />
+                        )}
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                          {profile?.full_name
+                            ?.split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                            .slice(0, 2) || user.email?.[0].toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="text-xs font-medium truncate">
+                          {profile?.full_name || user.email}
+                        </p>
+                      </div>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => navigate("/account")}>
+                      <UserIcon className="mr-2 h-4 w-4" />
+                      <span>Account</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+            <SidebarTrigger />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <SidebarTrigger />
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-accent transition-colors">
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      {profile?.avatar_url && (
+                        <AvatarImage src={profile.avatar_url} />
+                      )}
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                        {profile?.full_name
+                          ?.split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2) || user.email?.[0].toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate("/account")}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Account</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         )}
-        <SidebarTrigger />
       </SidebarFooter>
     </Sidebar>
   );
