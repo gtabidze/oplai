@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, MessageSquare, Zap, Save, RotateCcw } from "lucide-react";
+import { Settings, MessageSquare, Zap, Save, RotateCcw, Key } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Select,
@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
 
 const DEFAULT_QUESTION_PROMPT = `You are an expert at generating insightful evaluation questions. 
 Generate 5 diverse questions based on the provided content that test understanding, analysis, and application of the material.
@@ -43,6 +44,10 @@ const Configuration = () => {
   const [questionCount, setQuestionCount] = useState("5");
   const [autoSave, setAutoSave] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
+  const [llmProvider, setLlmProvider] = useState("lovable");
+  const [openaiKey, setOpenaiKey] = useState("");
+  const [anthropicKey, setAnthropicKey] = useState("");
+  const [isSavingKeys, setIsSavingKeys] = useState(false);
 
   useEffect(() => {
     // Load saved settings
@@ -51,12 +56,14 @@ const Configuration = () => {
     const savedQuestionCount = localStorage.getItem("questionCount");
     const savedAutoSave = localStorage.getItem("autoSave");
     const savedDarkMode = localStorage.getItem("darkMode");
+    const savedLlmProvider = localStorage.getItem("llmProvider");
 
     setQuestionPrompt(savedQuestionPrompt || DEFAULT_QUESTION_PROMPT);
     setAnswerPrompt(savedAnswerPrompt || DEFAULT_ANSWER_PROMPT);
     setQuestionCount(savedQuestionCount || "5");
     setAutoSave(savedAutoSave !== "false");
     setDarkMode(savedDarkMode !== "false");
+    setLlmProvider(savedLlmProvider || "lovable");
   }, []);
 
   const handleSavePrompts = () => {
@@ -88,10 +95,52 @@ const Configuration = () => {
     localStorage.setItem("questionCount", questionCount);
     localStorage.setItem("autoSave", autoSave.toString());
     localStorage.setItem("darkMode", darkMode.toString());
+    localStorage.setItem("llmProvider", llmProvider);
     toast({
       title: "Settings saved",
       description: "Your preferences have been updated successfully.",
     });
+  };
+
+  const handleSaveApiKeys = async () => {
+    setIsSavingKeys(true);
+    try {
+      const updates: Record<string, string> = {};
+      
+      if (openaiKey.trim()) {
+        updates.OPENAI_API_KEY = openaiKey.trim();
+      }
+      
+      if (anthropicKey.trim()) {
+        updates.ANTHROPIC_API_KEY = anthropicKey.trim();
+      }
+
+      if (Object.keys(updates).length > 0) {
+        toast({
+          title: "Add API Keys to Edge Function Secrets",
+          description: "Please add your API keys manually in the Lovable Cloud dashboard under Edge Functions → Secrets.",
+        });
+        
+        // Clear input fields
+        setOpenaiKey("");
+        setAnthropicKey("");
+      } else {
+        toast({
+          title: "No keys to save",
+          description: "Please enter at least one API key.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingKeys(false);
+    }
   };
 
   return (
@@ -105,10 +154,14 @@ const Configuration = () => {
         </div>
 
         <Tabs defaultValue="prompts" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="prompts" className="gap-2">
               <MessageSquare className="h-4 w-4" />
-              System Prompts
+              Prompts
+            </TabsTrigger>
+            <TabsTrigger value="llm" className="gap-2">
+              <Key className="h-4 w-4" />
+              LLM Provider
             </TabsTrigger>
             <TabsTrigger value="general" className="gap-2">
               <Settings className="h-4 w-4" />
@@ -184,6 +237,123 @@ const Configuration = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="llm" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>LLM Provider Selection</CardTitle>
+                <CardDescription>
+                  Choose your preferred AI provider for question and answer generation
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="llm-provider">AI Provider</Label>
+                  <Select value={llmProvider} onValueChange={setLlmProvider}>
+                    <SelectTrigger id="llm-provider">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lovable">Lovable AI (Recommended)</SelectItem>
+                      <SelectItem value="openai">OpenAI</SelectItem>
+                      <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    {llmProvider === "lovable" && "Uses Lovable AI Gateway with built-in API key"}
+                    {llmProvider === "openai" && "Requires OpenAI API key"}
+                    {llmProvider === "anthropic" && "Requires Anthropic API key"}
+                  </p>
+                </div>
+
+                <Button onClick={handleSaveGeneral}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Provider Selection
+                </Button>
+              </CardContent>
+            </Card>
+
+            {llmProvider !== "lovable" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>API Keys</CardTitle>
+                  <CardDescription>
+                    Securely store your API keys for the selected provider
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {llmProvider === "openai" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="openai-key">OpenAI API Key</Label>
+                      <Input
+                        id="openai-key"
+                        type="password"
+                        placeholder="sk-..."
+                        value={openaiKey}
+                        onChange={(e) => setOpenaiKey(e.target.value)}
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Get your API key from{" "}
+                        <a
+                          href="https://platform.openai.com/api-keys"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline"
+                        >
+                          OpenAI Platform
+                        </a>
+                      </p>
+                    </div>
+                  )}
+
+                  {llmProvider === "anthropic" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="anthropic-key">Anthropic API Key</Label>
+                      <Input
+                        id="anthropic-key"
+                        type="password"
+                        placeholder="sk-ant-..."
+                        value={anthropicKey}
+                        onChange={(e) => setAnthropicKey(e.target.value)}
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Get your API key from{" "}
+                        <a
+                          href="https://console.anthropic.com/settings/keys"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline"
+                        >
+                          Anthropic Console
+                        </a>
+                      </p>
+                    </div>
+                  )}
+
+                  <Button onClick={handleSaveApiKeys} disabled={isSavingKeys}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {isSavingKeys ? "Saving..." : "Save API Key Securely"}
+                  </Button>
+
+                  <div className="rounded-lg bg-muted p-4 text-sm space-y-2">
+                    <p className="font-medium">🔒 Manual Setup Required</p>
+                    <p className="text-muted-foreground">
+                      After entering your API key above, you must manually add it to your Lovable Cloud Edge Function Secrets:
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 text-muted-foreground ml-2">
+                      <li>Click on "Backend" in the top menu</li>
+                      <li>Go to "Edge Functions" → "Secrets"</li>
+                      <li>Add a new secret with the key name (OPENAI_API_KEY or ANTHROPIC_API_KEY)</li>
+                      <li>Paste your API key as the value</li>
+                    </ol>
+                    <p className="text-muted-foreground mt-2">
+                      Your keys are stored securely and only accessible by your backend functions.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="general" className="space-y-6">

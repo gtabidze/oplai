@@ -33,10 +33,12 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
     setIsGenerating(true);
     try {
       const customPrompt = localStorage.getItem('questionSystemPrompt');
+      const llmProvider = localStorage.getItem('llmProvider') || 'lovable';
       const { data, error } = await supabase.functions.invoke("generate-questions", {
         body: { 
           documentContent: plaibook.content,
-          customSystemPrompt: customPrompt 
+          customSystemPrompt: customPrompt,
+          llmProvider 
         },
       });
 
@@ -80,11 +82,13 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
     setGeneratingAnswerId(questionId);
     try {
       const customPrompt = localStorage.getItem('answerSystemPrompt');
+      const llmProvider = localStorage.getItem('llmProvider') || 'lovable';
       const { data, error } = await supabase.functions.invoke("get-answer", {
         body: { 
           documentContent: plaibook.content, 
           question: questionText,
-          customSystemPrompt: customPrompt 
+          customSystemPrompt: customPrompt,
+          llmProvider 
         },
       });
 

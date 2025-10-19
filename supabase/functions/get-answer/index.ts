@@ -5,22 +5,77 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+async function callLLM(provider: string, systemPrompt: string, userPrompt: string) {
+  console.log('Calling LLM with provider:', provider);
+  
+  if (provider === 'openai') {
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured');
+    }
 
-  try {
-    const { documentContent, question, customSystemPrompt } = await req.json();
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } 
+  else if (provider === 'anthropic') {
+    const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
+    if (!ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY is not configured');
+    }
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [
+          { role: 'user', content: userPrompt }
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Anthropic API error:', response.status, errorText);
+      throw new Error(`Anthropic API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.content[0].text;
+  } 
+  else {
+    // Default to Lovable AI
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
-
-    console.log('Getting answer for question:', question);
-
-    const defaultSystemPrompt = 'You are a professional document expert. Answer questions based strictly on the document content. Keep answers concise (maximum 400 characters), direct, and without fluff. Provide only essential information.';
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -31,26 +86,41 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          {
-            role: 'system',
-            content: customSystemPrompt || defaultSystemPrompt
-          },
-          {
-            role: 'user',
-            content: `Document:\n\n${documentContent}\n\nQuestion: ${question}\n\nProvide a direct answer in 400 characters or less.`
-          }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
         ],
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('AI Gateway error:', response.status, errorText);
-      throw new Error(`AI Gateway error: ${response.status}`);
+      console.error('Lovable AI error:', response.status, errorText);
+      throw new Error(`Lovable AI error: ${response.status}`);
     }
 
     const data = await response.json();
-    const answer = data.choices[0].message.content;
+    return data.choices[0].message.content;
+  }
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { documentContent, question, customSystemPrompt, llmProvider } = await req.json();
+    const provider = llmProvider || 'lovable';
+
+    console.log('Getting answer for question:', question, 'using provider:', provider);
+
+    const defaultSystemPrompt = 'You are a professional document expert. Answer questions based strictly on the document content. Keep answers concise (maximum 400 characters), direct, and without fluff. Provide only essential information.';
+
+    const answer = await callLLM(
+      provider,
+      customSystemPrompt || defaultSystemPrompt,
+      `Document:\n\n${documentContent}\n\nQuestion: ${question}\n\nProvide a direct answer in 400 characters or less.`
+    );
     
     console.log('Answer generated successfully');
 
