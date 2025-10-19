@@ -5,6 +5,7 @@ import { Plaibook } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, FileText, Calendar, Trash2, MessageSquare } from "lucide-react";
+import { usePlaybookSync } from "@/hooks/usePlaybookSync";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +21,9 @@ const Playbooks = () => {
   const navigate = useNavigate();
   const [plaibooks, setPlaibooks] = useLocalStorage<Plaibook[]>("plaibooks", []);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  
+  // Sync playbooks to database
+  usePlaybookSync();
 
   const handleCreateNew = () => {
     const newPlaibook: Plaibook = {

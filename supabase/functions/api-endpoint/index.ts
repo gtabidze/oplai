@@ -72,62 +72,96 @@ Deno.serve(async (req) => {
 
     console.log(`Endpoint active, fetching playbook data for user: ${apiEndpoint.user_id}`);
 
-    // Fetch synced files for this user
-    let filesQuery = supabase
-      .from('synced_files')
+    // Determine which playbooks to fetch
+    let playbooksQuery = supabase
+      .from('playbooks')
       .select('*')
       .eq('user_id', apiEndpoint.user_id);
 
-    // If not golden datasets (which shows all), filter by selected playbooks
-    // Note: Since playbooks are stored in localStorage, we'll return all files
-    // and let the client filter if needed. Alternatively, you could store playbook
-    // associations in the database.
-    
-    const { data: files, error: filesError } = await filesQuery;
+    // If not Golden Datasets API (which shows all), filter by selected playbooks
+    if (apiEndpoint.name !== 'Golden Datasets API' && apiEndpoint.selected_playbooks.length > 0) {
+      playbooksQuery = playbooksQuery.in('id', apiEndpoint.selected_playbooks);
+    }
 
-    if (filesError) {
-      console.error('Error fetching files:', filesError);
+    const { data: playbooks, error: playbooksError } = await playbooksQuery;
+
+    if (playbooksError) {
+      console.error('Error fetching playbooks:', playbooksError);
       return new Response(
-        JSON.stringify({ error: 'Error fetching data' }),
+        JSON.stringify({ error: 'Error fetching playbooks' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Found ${files?.length || 0} files`);
+    console.log(`Found ${playbooks?.length || 0} playbooks`);
 
     // Build response based on configured data points
-    const responseData = files?.map((file) => {
-      const data: Record<string, unknown> = {};
+    const responseData = await Promise.all((playbooks || []).map(async (playbook) => {
+      const data: Record<string, unknown> = {
+        playbookId: playbook.id,
+        playbookTitle: playbook.title,
+      };
       
       if (apiEndpoint.data_points.playbookContent) {
-        data.content = file.content;
-        data.fileName = file.file_name;
+        data.content = playbook.content;
       }
       
-      // Note: Questions, answers, and scores would need to be stored in separate tables
-      // For now, we'll include placeholders
-      if (apiEndpoint.data_points.questions) {
-        data.questions = [];
-      }
-      
-      if (apiEndpoint.data_points.answers) {
-        data.answers = [];
-      }
-      
-      if (apiEndpoint.data_points.scores) {
-        data.scores = {};
+      // Fetch questions for this playbook if requested
+      if (apiEndpoint.data_points.questions || apiEndpoint.data_points.answers) {
+        const { data: questions, error: questionsError } = await supabase
+          .from('questions')
+          .select('*')
+          .eq('playbook_id', playbook.id);
+
+        if (!questionsError && questions) {
+          if (apiEndpoint.data_points.questions) {
+            data.questions = questions.map(q => q.question);
+          }
+
+          // Fetch answers if requested
+          if (apiEndpoint.data_points.answers || apiEndpoint.data_points.scores) {
+            const questionIds = questions.map(q => q.id);
+            if (questionIds.length > 0) {
+              const { data: answers, error: answersError } = await supabase
+                .from('answers')
+                .select('*')
+                .in('question_id', questionIds);
+
+              if (!answersError && answers) {
+                if (apiEndpoint.data_points.answers) {
+                  data.answers = answers.map(a => ({
+                    question: questions.find(q => q.id === a.question_id)?.question,
+                    answer: a.answer,
+                  }));
+                }
+
+                if (apiEndpoint.data_points.scores) {
+                  data.scores = answers.reduce((acc, a) => {
+                    if (a.score !== null) {
+                      const question = questions.find(q => q.id === a.question_id)?.question;
+                      if (question) {
+                        acc[question] = a.score;
+                      }
+                    }
+                    return acc;
+                  }, {} as Record<string, number>);
+                }
+              }
+            }
+          }
+        }
       }
       
       if (apiEndpoint.data_points.createdDate) {
-        data.createdAt = file.created_at;
+        data.createdAt = playbook.created_at;
       }
       
       if (apiEndpoint.data_points.updatedDate) {
-        data.updatedAt = file.updated_at;
+        data.updatedAt = playbook.updated_at;
       }
 
       return data;
-    }) || [];
+    }));
 
     console.log(`Returning ${responseData.length} records`);
 

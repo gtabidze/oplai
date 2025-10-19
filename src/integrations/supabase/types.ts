@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      answers: {
+        Row: {
+          answer: string
+          created_at: string | null
+          id: string
+          question_id: string
+          score: number | null
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string | null
+          id?: string
+          question_id: string
+          score?: number | null
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string | null
+          id?: string
+          question_id?: string
+          score?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_endpoints: {
         Row: {
           created_at: string | null
@@ -91,6 +126,33 @@ export type Database = {
           refresh_token?: string | null
           token_expires_at?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      playbooks: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -183,6 +245,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      questions: {
+        Row: {
+          created_at: string | null
+          id: string
+          playbook_id: string
+          question: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          playbook_id: string
+          question: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          playbook_id?: string
+          question?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       synced_files: {
         Row: {
