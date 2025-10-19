@@ -261,7 +261,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
           </SheetHeader>
 
         <Tabs defaultValue="question" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2 mb-4 mx-6">
+          <TabsList className="grid w-full grid-cols-2 mb-4 mx-6 mt-4">
             <TabsTrigger value="question">Question Generation</TabsTrigger>
             <TabsTrigger value="answer">Answer Generation</TabsTrigger>
           </TabsList>
