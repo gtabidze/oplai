@@ -61,10 +61,12 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
   const [newPromptName, setNewPromptName] = useState("");
   const [newPromptContent, setNewPromptContent] = useState("");
   const [createPromptType, setCreatePromptType] = useState<"question" | "answer">("question");
+  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
     if (user && open) {
       loadPrompts();
+      setHasChanges(false);
     }
   }, [user, open]);
 
@@ -139,6 +141,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
         setSelectedAnswerVersion(version);
         setAnswerContent(version.content);
       }
+      setHasChanges(true);
       toast.success(`Loaded version ${version.version_number}`);
     }
   };
@@ -201,6 +204,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
           await loadVersions(selectedAnswerPrompt.id, "answer");
         }
         
+        setHasChanges(false);
         onOpenChange(false);
       } catch (error: any) {
         toast.error(error.message || "Failed to save prompts");
@@ -272,6 +276,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                     onValueChange={(value) => {
                       const prompt = questionPrompts.find(p => p.id === value);
                       setSelectedQuestionPrompt(prompt || null);
+                      setHasChanges(true);
                     }}
                   >
                     <SelectTrigger className="h-10">
@@ -318,7 +323,10 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                   <Label className="text-sm font-medium">Prompt Content</Label>
                   <Textarea
                     value={questionContent}
-                    onChange={(e) => setQuestionContent(e.target.value)}
+                    onChange={(e) => {
+                      setQuestionContent(e.target.value);
+                      setHasChanges(true);
+                    }}
                     className="flex-1 resize-none font-mono text-base leading-relaxed"
                     placeholder="Select a prompt to view its content..."
                   />
@@ -351,6 +359,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                     onValueChange={(value) => {
                       const prompt = answerPrompts.find(p => p.id === value);
                       setSelectedAnswerPrompt(prompt || null);
+                      setHasChanges(true);
                     }}
                   >
                     <SelectTrigger className="h-10">
@@ -397,7 +406,10 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                   <Label className="text-sm font-medium">Prompt Content</Label>
                   <Textarea
                     value={answerContent}
-                    onChange={(e) => setAnswerContent(e.target.value)}
+                    onChange={(e) => {
+                      setAnswerContent(e.target.value);
+                      setHasChanges(true);
+                    }}
                     className="flex-1 resize-none font-mono text-base leading-relaxed"
                     placeholder="Select a prompt to view its content..."
                   />
@@ -425,7 +437,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!selectedQuestionPrompt || !selectedAnswerPrompt} className="gap-2">
+          <Button onClick={handleSave} disabled={!selectedQuestionPrompt || !selectedAnswerPrompt || !hasChanges} className="gap-2">
             <Save className="h-4 w-4" />
             Save Active Prompts
           </Button>
