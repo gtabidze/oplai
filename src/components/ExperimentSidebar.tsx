@@ -367,7 +367,7 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions, onUpdateDocumen
       <div className="flex-1 space-y-3">
         {questions.map((q) => (
           <Card key={q.id} className="border-border/50">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2 pt-3 px-3">
               {editingQuestionId === q.id ? (
                 <div className="space-y-2">
                   <Input
@@ -431,22 +431,22 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions, onUpdateDocumen
                 </div>
               )}
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 pt-2 pb-2 px-3">
               {!q.answer ? (
                 <Button
                   onClick={() => handleGenerateAnswer(q.id, q.question)}
                   disabled={generatingAnswerId === q.id}
                   size="sm"
-                  className="w-full"
+                  className="w-full h-8"
                 >
                   {generatingAnswerId === q.id ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                       Generating...
                     </>
                   ) : (
                     <>
-                      <Sparkles className="mr-2 h-4 w-4" />
+                      <Sparkles className="mr-1 h-3 w-3" />
                       Generate Answer
                     </>
                   )}
@@ -482,12 +482,12 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions, onUpdateDocumen
                     </div>
                   ) : (
                     <>
-                      <div className="relative p-3 bg-muted/50 rounded-md group">
+                      <div className="relative p-2 bg-muted/50 rounded-md group">
                         <p className="text-sm whitespace-pre-wrap">{q.answer}</p>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={() => handleEditAnswer(q.id, q.answer || "")}
                           title="Edit answer"
                         >
@@ -500,16 +500,16 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions, onUpdateDocumen
                         disabled={generatingAnswerId === q.id}
                         size="sm"
                         variant="outline"
-                        className="w-full"
+                        className="w-full h-8"
                       >
                         {generatingAnswerId === q.id ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                             Regenerating...
                           </>
                         ) : (
                           <>
-                            <RotateCw className="mr-2 h-4 w-4" />
+                            <RotateCw className="mr-1 h-3 w-3" />
                             Regenerate Answer
                           </>
                         )}
