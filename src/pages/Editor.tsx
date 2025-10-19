@@ -100,6 +100,18 @@ const Editor = () => {
     setCurrentPlaibook({ ...currentPlaibook, questions });
   };
 
+  const handleUpdateDocuments = (docIds: string[]) => {
+    if (!currentPlaibook) return;
+    
+    const updatedPlaibooks = plaibooks.map((p) =>
+      p.id === currentPlaibook.id
+        ? { ...p, selectedDocuments: docIds, updatedAt: Date.now() }
+        : p
+    );
+    setPlaibooks(updatedPlaibooks);
+    setCurrentPlaibook({ ...currentPlaibook, selectedDocuments: docIds });
+  };
+
   const handlePreview = () => {
     if (!currentPlaibook?.questions || currentPlaibook.questions.length === 0) {
       toast.error("No questions to preview. Generate questions first.");
@@ -183,6 +195,7 @@ const Editor = () => {
                 content: editorContent || currentPlaibook.content
               }}
               onUpdateQuestions={handleUpdateQuestions}
+              onUpdateDocuments={handleUpdateDocuments}
             />
           </div>
         </div>

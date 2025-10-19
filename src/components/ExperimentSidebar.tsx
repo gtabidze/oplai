@@ -3,30 +3,71 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { ThumbsUp, ThumbsDown, Loader2, Sparkles, Plus, Trash2, RotateCw, Settings } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ThumbsUp, ThumbsDown, Loader2, Sparkles, Plus, Trash2, RotateCw, Settings, FileText, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SavedQuestion, Plaibook } from "@/lib/types";
 import { PromptSettingsModal } from "./PromptSettingsModal";
+import { DocumentSelector } from "./DocumentSelector";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ExperimentSidebarProps {
   plaibook: Plaibook | null;
   onUpdateQuestions: (questions: SavedQuestion[]) => void;
+  onUpdateDocuments: (docIds: string[]) => void;
 }
 
-export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSidebarProps) => {
+export const ExperimentSidebar = ({ plaibook, onUpdateQuestions, onUpdateDocuments }: ExperimentSidebarProps) => {
+  const { user } = useAuth();
   const [questions, setQuestions] = useState<SavedQuestion[]>([]);
   const [newQuestion, setNewQuestion] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingAnswerId, setGeneratingAnswerId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [regeneratingQuestionId, setRegeneratingQuestionId] = useState<string | null>(null);
+  const [showDocSelector, setShowDocSelector] = useState(false);
+  const [selectedDocs, setSelectedDocs] = useState<any[]>([]);
 
   useEffect(() => {
     if (plaibook?.questions) {
       setQuestions(plaibook.questions);
     }
+    if (plaibook?.selectedDocuments) {
+      loadSelectedDocuments(plaibook.selectedDocuments);
+    }
   }, [plaibook?.id]);
+
+  const loadSelectedDocuments = async (docIds: string[]) => {
+    if (!docIds.length || !user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('synced_files')
+        .select('id, file_name, content')
+        .in('id', docIds);
+      
+      if (error) throw error;
+      setSelectedDocs(data || []);
+    } catch (error) {
+      console.error('Error loading selected documents:', error);
+    }
+  };
+
+  const getCombinedContent = () => {
+    let combined = plaibook?.content || '';
+    
+    if (selectedDocs.length > 0) {
+      const docContents = selectedDocs
+        .filter(doc => doc.content && doc.content.trim().length > 0)
+        .map(doc => `\n\n--- Document: ${doc.file_name} ---\n${doc.content}`)
+        .join('\n');
+      
+      combined += docContents;
+    }
+    
+    return combined;
+  };
 
   const handleGenerateQuestions = async () => {
     if (!plaibook) return;
@@ -39,7 +80,7 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
       
       const { data, error } = await supabase.functions.invoke("generate-questions", {
         body: { 
-          documentContent: plaibook.content,
+          documentContent: getCombinedContent(),
           customSystemPrompt: customPrompt,
           llmProvider,
           count: parseInt(questionCount)
@@ -89,7 +130,7 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
       const llmProvider = localStorage.getItem('llmProvider') || 'lovable';
       const { data, error } = await supabase.functions.invoke("get-answer", {
         body: { 
-          documentContent: plaibook.content, 
+          documentContent: getCombinedContent(), 
           question: questionText,
           customSystemPrompt: customPrompt,
           llmProvider 
@@ -138,7 +179,7 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
       const llmProvider = localStorage.getItem('llmProvider') || 'lovable';
       const { data, error } = await supabase.functions.invoke("generate-questions", {
         body: { 
-          documentContent: plaibook.content,
+          documentContent: getCombinedContent(),
           customSystemPrompt: customPrompt 
             ? customPrompt + "\n\nGenerate exactly 1 question."
             : 'You are a helpful assistant that generates questions. Analyze the provided text and generate 1 question that end users would ask about the facts, content, and subject matter presented in the text. Focus on the actual content, NOT meta-questions about the document itself. Return ONLY a JSON array with a single string, nothing else.',
@@ -171,6 +212,18 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
     }
   };
 
+  const handleSelectDocuments = (docIds: string[]) => {
+    onUpdateDocuments(docIds);
+    loadSelectedDocuments(docIds);
+  };
+
+  const removeDocument = (docId: string) => {
+    const newDocIds = (plaibook?.selectedDocuments || []).filter(id => id !== docId);
+    onUpdateDocuments(newDocIds);
+    setSelectedDocs(prev => prev.filter(doc => doc.id !== docId));
+    toast.success("Document removed");
+  };
+
   return (
     <div className="h-full flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -185,6 +238,41 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
         >
           <Settings className="h-4 w-4" />
         </Button>
+      </div>
+
+      {/* Document Selection */}
+      <div className="space-y-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-start"
+          onClick={() => setShowDocSelector(true)}
+        >
+          <FileText className="h-4 w-4 mr-2" />
+          Select Documents ({selectedDocs.length})
+        </Button>
+        
+        {selectedDocs.length > 0 && (
+          <div className="space-y-1">
+            {selectedDocs.map(doc => (
+              <div
+                key={doc.id}
+                className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1"
+              >
+                <FileText className="h-3 w-3" />
+                <span className="flex-1 truncate">{doc.file_name}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5"
+                  onClick={() => removeDocument(doc.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Add Question Input */}
@@ -345,6 +433,12 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
       </div>
 
       <PromptSettingsModal open={showSettings} onOpenChange={setShowSettings} />
+      <DocumentSelector
+        open={showDocSelector}
+        onOpenChange={setShowDocSelector}
+        selectedDocIds={plaibook?.selectedDocuments || []}
+        onSelectDocuments={handleSelectDocuments}
+      />
     </div>
   );
 };
