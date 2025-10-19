@@ -45,7 +45,28 @@ interface APIEndpoint {
 
 const APIs = () => {
   const [plaibooks] = useLocalStorage<Plaibook[]>("plaibooks", []);
-  const [endpoints, setEndpoints] = useState<APIEndpoint[]>([]);
+  
+  // Initialize with Golden Datasets API
+  const [endpoints, setEndpoints] = useState<APIEndpoint[]>(() => {
+    const goldenDatasetAPI: APIEndpoint = {
+      id: "golden-datasets-api",
+      name: "Golden Datasets API",
+      isActive: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      selectedPlaybooks: [], // Will show all playbooks
+      dataPoints: {
+        playbookContent: true,
+        questions: true,
+        answers: true,
+        scores: true,
+        createdDate: true,
+        updatedDate: true,
+      },
+    };
+    return [goldenDatasetAPI];
+  });
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newEndpoint, setNewEndpoint] = useState<Partial<APIEndpoint>>({
     name: "",
@@ -121,6 +142,12 @@ const APIs = () => {
   };
 
   const toggleEndpointStatus = (id: string) => {
+    // Prevent deactivating Golden Datasets API
+    if (id === "golden-datasets-api") {
+      toast.error("Golden Datasets API cannot be deactivated");
+      return;
+    }
+    
     setEndpoints(
       endpoints.map((endpoint) =>
         endpoint.id === id
@@ -131,6 +158,12 @@ const APIs = () => {
   };
 
   const deleteEndpoint = (id: string) => {
+    // Prevent deleting Golden Datasets API
+    if (id === "golden-datasets-api") {
+      toast.error("Golden Datasets API cannot be deleted");
+      return;
+    }
+    
     setEndpoints(endpoints.filter((endpoint) => endpoint.id !== id));
     toast.success("API endpoint deleted");
   };
@@ -431,14 +464,18 @@ const APIs = () => {
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Selected Playbooks:</Label>
                     <div className="flex flex-wrap gap-2">
-                      {endpoint.selectedPlaybooks.map((playbookId) => {
-                        const playbook = plaibooks.find((p) => p.id === playbookId);
-                        return playbook ? (
-                          <Badge key={playbookId} variant="secondary">
-                            {playbook.title}
-                          </Badge>
-                        ) : null;
-                      })}
+                      {endpoint.id === "golden-datasets-api" ? (
+                        <Badge variant="secondary">All Playbooks</Badge>
+                      ) : (
+                        endpoint.selectedPlaybooks.map((playbookId) => {
+                          const playbook = plaibooks.find((p) => p.id === playbookId);
+                          return playbook ? (
+                            <Badge key={playbookId} variant="secondary">
+                              {playbook.title}
+                            </Badge>
+                          ) : null;
+                        })
+                      )}
                     </div>
                   </div>
 
@@ -458,9 +495,14 @@ const APIs = () => {
                       <Switch
                         checked={endpoint.isActive}
                         onCheckedChange={() => toggleEndpointStatus(endpoint.id)}
+                        disabled={endpoint.id === "golden-datasets-api"}
                       />
                       <Label className="text-sm">
-                        {endpoint.isActive ? "Deactivate" : "Activate"} API
+                        {endpoint.id === "golden-datasets-api" 
+                          ? "Always Active" 
+                          : endpoint.isActive 
+                            ? "Deactivate" 
+                            : "Activate"} API
                       </Label>
                     </div>
                     <p className="text-xs text-muted-foreground">
