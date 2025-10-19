@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { ThumbsUp, ThumbsDown, Loader2, Sparkles, Plus, Trash2, RotateCw } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Loader2, Sparkles, Plus, Trash2, RotateCw, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SavedQuestion, Plaibook } from "@/lib/types";
+import { PromptSettingsModal } from "./PromptSettingsModal";
 
 interface ExperimentSidebarProps {
   plaibook: Plaibook | null;
@@ -18,6 +19,7 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
   const [newQuestion, setNewQuestion] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingAnswerId, setGeneratingAnswerId] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     if (plaibook?.questions) {
@@ -30,8 +32,12 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
     
     setIsGenerating(true);
     try {
+      const customPrompt = localStorage.getItem('questionSystemPrompt');
       const { data, error } = await supabase.functions.invoke("generate-questions", {
-        body: { documentContent: plaibook.content },
+        body: { 
+          documentContent: plaibook.content,
+          customSystemPrompt: customPrompt 
+        },
       });
 
       if (error) throw error;
@@ -73,8 +79,13 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
 
     setGeneratingAnswerId(questionId);
     try {
+      const customPrompt = localStorage.getItem('answerSystemPrompt');
       const { data, error } = await supabase.functions.invoke("get-answer", {
-        body: { documentContent: plaibook.content, question: questionText },
+        body: { 
+          documentContent: plaibook.content, 
+          question: questionText,
+          customSystemPrompt: customPrompt 
+        },
       });
 
       if (error) throw error;
@@ -112,9 +123,19 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
 
   return (
     <div className="h-full flex flex-col gap-4">
-      <h2 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-        Experiment
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">
+          Evaluation Area
+        </h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowSettings(true)}
+          className="h-8 w-8"
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
+      </div>
 
       {/* Add Question Input */}
       <div className="flex gap-2">
@@ -257,6 +278,8 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
           </Card>
         ))}
       </div>
+
+      <PromptSettingsModal open={showSettings} onOpenChange={setShowSettings} />
     </div>
   );
 };

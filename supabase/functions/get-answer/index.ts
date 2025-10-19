@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { documentContent, question } = await req.json();
+    const { documentContent, question, customSystemPrompt } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!LOVABLE_API_KEY) {
@@ -19,6 +19,8 @@ serve(async (req) => {
     }
 
     console.log('Getting answer for question:', question);
+
+    const defaultSystemPrompt = 'You are a professional document expert. Answer questions based strictly on the document content. Keep answers concise (maximum 400 characters), direct, and without fluff. Provide only essential information.';
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -31,7 +33,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a professional document expert. Answer questions based strictly on the document content. Keep answers concise (maximum 400 characters), direct, and without fluff. Provide only essential information.'
+            content: customSystemPrompt || defaultSystemPrompt
           },
           {
             role: 'user',

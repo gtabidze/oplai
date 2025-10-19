@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { documentContent } = await req.json();
+    const { documentContent, customSystemPrompt } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!LOVABLE_API_KEY) {
@@ -19,6 +19,8 @@ serve(async (req) => {
     }
 
     console.log('Generating questions for document with length:', documentContent?.length);
+
+    const defaultSystemPrompt = 'You are a helpful assistant that generates questions. Analyze the provided text and generate 8 questions that end users would ask about the facts, content, and subject matter presented in the text. Focus on the actual content, NOT meta-questions about the document itself. Return ONLY a JSON array of strings, nothing else.';
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -31,7 +33,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful assistant that generates questions. Analyze the provided text and generate 8 questions that end users would ask about the facts, content, and subject matter presented in the text. Focus on the actual content, NOT meta-questions about the document itself. Return ONLY a JSON array of strings, nothing else.'
+            content: customSystemPrompt || defaultSystemPrompt
           },
           {
             role: 'user',
