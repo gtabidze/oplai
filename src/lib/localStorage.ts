@@ -3,8 +3,8 @@ import { Plaibook } from './types';
 
 export function getAllPlaibooks(): Plaibook[] {
   try {
-    const keys = Object.keys(window.localStorage).filter(key => key.startsWith('plaibook-'));
-    return keys.map(key => JSON.parse(window.localStorage.getItem(key) || '{}'));
+    const stored = window.localStorage.getItem('plaibooks');
+    return stored ? JSON.parse(stored) : [];
   } catch (error) {
     console.error(error);
     return [];
