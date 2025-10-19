@@ -51,6 +51,7 @@ export default {
       },
       fontFamily: {
         orbitron: ['Orbitron', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
       },
       boxShadow: {
         'glow': 'var(--shadow-glow)',
