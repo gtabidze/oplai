@@ -313,7 +313,7 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions, onUpdateDocumen
       </Button>
 
       {/* Questions List */}
-      <div className="flex-1 overflow-y-auto space-y-3">
+      <div className="flex-1 space-y-3">
         {questions.map((q) => (
           <Card key={q.id} className="border-border/50">
             <CardHeader className="pb-3">

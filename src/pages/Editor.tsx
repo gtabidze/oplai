@@ -188,8 +188,8 @@ const Editor = () => {
         </div>
 
         <div className="w-96 border-l border-border bg-card/30 backdrop-blur-sm flex flex-col">
-          <div className="p-6 flex-1 flex flex-col overflow-hidden">
-            <ExperimentSidebar 
+          <div className="p-6 flex-1 flex flex-col overflow-y-auto">
+            <ExperimentSidebar
               plaibook={{
                 ...currentPlaibook,
                 content: editorContent || currentPlaibook.content
