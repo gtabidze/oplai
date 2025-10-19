@@ -11,6 +11,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Cloud } from "lucide-react";
 
+// Import logos
+import dropboxLogo from "@/assets/logos/dropbox.png";
+import googleDriveLogo from "@/assets/logos/google-drive.png";
+import onedriveLogo from "@/assets/logos/onedrive.png";
+import boxLogo from "@/assets/logos/box.png";
+import awsS3Logo from "@/assets/logos/aws-s3.png";
+import icloudLogo from "@/assets/logos/icloud.png";
+import notionLogo from "@/assets/logos/notion.png";
+import confluenceLogo from "@/assets/logos/confluence.png";
+import sharepointLogo from "@/assets/logos/sharepoint.png";
+import githubLogo from "@/assets/logos/github.png";
+import evernoteLogo from "@/assets/logos/evernote.png";
+
 interface StorageProvider {
   id: string;
   name: string;
@@ -23,77 +36,77 @@ const storageProviders: StorageProvider[] = [
   {
     id: "dropbox",
     name: "Dropbox",
-    logo: "https://images.unsplash.com/photo-1606236236107-3a9ed2c6f0e2?w=100&h=100&fit=crop",
+    logo: dropboxLogo,
     description: "Cloud storage and file synchronization",
     category: "Cloud Storage"
   },
   {
     id: "google-drive",
     name: "Google Drive",
-    logo: "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=100&h=100&fit=crop",
+    logo: googleDriveLogo,
     description: "Google's cloud storage service",
     category: "Cloud Storage"
   },
   {
     id: "onedrive",
     name: "OneDrive",
-    logo: "https://images.unsplash.com/photo-1633419461186-7d40a38105ec?w=100&h=100&fit=crop",
+    logo: onedriveLogo,
     description: "Microsoft's cloud storage platform",
     category: "Cloud Storage"
   },
   {
     id: "box",
     name: "Box",
-    logo: "https://images.unsplash.com/photo-1618044733300-9472054094ee?w=100&h=100&fit=crop",
+    logo: boxLogo,
     description: "Enterprise cloud content management",
     category: "Cloud Storage"
   },
   {
     id: "aws-s3",
     name: "Amazon S3",
-    logo: "https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?w=100&h=100&fit=crop",
+    logo: awsS3Logo,
     description: "Amazon's object storage service",
     category: "Cloud Storage"
   },
   {
     id: "icloud",
     name: "iCloud Drive",
-    logo: "https://images.unsplash.com/photo-1611532736570-ebfb82cad513?w=100&h=100&fit=crop",
+    logo: icloudLogo,
     description: "Apple's cloud storage service",
     category: "Cloud Storage"
   },
   {
     id: "notion",
     name: "Notion",
-    logo: "https://images.unsplash.com/photo-1618044733300-9472054094ee?w=100&h=100&fit=crop",
+    logo: notionLogo,
     description: "All-in-one workspace and documentation",
     category: "Documentation"
   },
   {
     id: "confluence",
     name: "Confluence",
-    logo: "https://images.unsplash.com/photo-1606236236107-3a9ed2c6f0e2?w=100&h=100&fit=crop",
+    logo: confluenceLogo,
     description: "Team collaboration and documentation",
     category: "Documentation"
   },
   {
     id: "sharepoint",
     name: "SharePoint",
-    logo: "https://images.unsplash.com/photo-1633419461186-7d40a38105ec?w=100&h=100&fit=crop",
+    logo: sharepointLogo,
     description: "Microsoft's collaboration platform",
     category: "Documentation"
   },
   {
     id: "github",
     name: "GitHub",
-    logo: "https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?w=100&h=100&fit=crop",
+    logo: githubLogo,
     description: "Code hosting and version control",
     category: "Development"
   },
   {
     id: "evernote",
     name: "Evernote",
-    logo: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=100&h=100&fit=crop",
+    logo: evernoteLogo,
     description: "Note-taking and organization",
     category: "Documentation"
   }
