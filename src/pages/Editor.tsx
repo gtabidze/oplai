@@ -102,14 +102,22 @@ const Editor = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-[1800px] mx-auto px-6 py-4 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="text-2xl font-bold border-none focus-visible:ring-0 px-0 bg-transparent flex-1"
+              placeholder="Untitled Plaibook"
+            />
+          </div>
           
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handlePreview}>
@@ -127,13 +135,6 @@ const Editor = () => {
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto px-6 py-8">
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="text-2xl font-bold border-none focus-visible:ring-0 px-0 mb-6 bg-transparent"
-              placeholder="Untitled Plaibook"
-            />
-            
             <EditorContent editor={editor} className="text-lg" />
           </div>
         </div>
