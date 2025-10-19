@@ -71,8 +71,8 @@ export const Auth = () => {
           <CardTitle>{isSignUp ? "Create Account" : "Welcome Back"}</CardTitle>
           <CardDescription>
             {isSignUp
-              ? "Sign up to start collaborating on plaibooks"
-              : "Sign in to continue to your plaibooks"}
+              ? "Sign up to start using OPLAI"
+              : "Sign in to continue to OPLAI"}
           </CardDescription>
         </CardHeader>
         <CardContent>
