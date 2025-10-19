@@ -5,6 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Input size limits to prevent resource abuse
+const MAX_DOCUMENT_SIZE = 50000; // ~50KB of text
+const MAX_PROMPT_SIZE = 2000;    // ~2KB for custom prompts
+
 async function callLLM(provider: string, systemPrompt: string, userPrompt: string) {
   console.log('Calling LLM with provider:', provider);
   
@@ -111,6 +115,21 @@ serve(async (req) => {
   try {
     const { documentContent, customSystemPrompt, llmProvider } = await req.json();
     const provider = llmProvider || 'lovable';
+
+    // Validate input sizes
+    if (documentContent && documentContent.length > MAX_DOCUMENT_SIZE) {
+      return new Response(
+        JSON.stringify({ error: 'Document content exceeds maximum size limit' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (customSystemPrompt && customSystemPrompt.length > MAX_PROMPT_SIZE) {
+      return new Response(
+        JSON.stringify({ error: 'Custom prompt exceeds maximum size limit' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Extract text from HTML
     const textContent = documentContent
