@@ -70,7 +70,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader 
-        className="border-b border-border h-[72px] flex items-center justify-start pl-4 cursor-pointer hover:bg-accent/50 transition-colors"
+        className="border-b border-border h-[72px] flex items-center justify-start pl-2 cursor-pointer hover:bg-accent/50 transition-colors"
         onClick={() => navigate("/")}
       >
         {open ? (
