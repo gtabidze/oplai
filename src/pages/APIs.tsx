@@ -797,9 +797,14 @@ const APIs = () => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                     <div className="flex-1 space-y-1">
-                      <code className="text-sm font-mono break-all">
+                      <a 
+                        href={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api-endpoint/${endpoint.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-mono break-all text-primary hover:underline"
+                      >
                         {import.meta.env.VITE_SUPABASE_URL}/functions/v1/api-endpoint/{endpoint.id}
-                      </code>
+                      </a>
                       <p className="text-xs text-muted-foreground">API Endpoint URL</p>
                     </div>
                   </div>
