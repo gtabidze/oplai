@@ -126,10 +126,14 @@ export function AppSidebar() {
                 )}
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent side="right" align="end" className="w-48">
-              <DropdownMenuItem onClick={() => navigate("/configuration")}>
+              <DropdownMenuContent side="right" align="end" className="w-48">
+              <DropdownMenuItem onClick={() => navigate("/account")}>
                 <UserIcon className="mr-2 h-4 w-4" />
                 <span>Account</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/configuration")}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive">

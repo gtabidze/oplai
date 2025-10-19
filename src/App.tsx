@@ -13,6 +13,7 @@ import Editor from "./pages/Editor";
 import Playbooks from "./pages/Playbooks";
 import Playgrounds from "./pages/Playgrounds";
 import Configuration from "./pages/Configuration";
+import Account from "./pages/Account";
 import Monitor from "./pages/Monitor";
 import Published from "./pages/Published";
 import NotFound from "./pages/NotFound";
@@ -63,6 +64,7 @@ const App = () => (
                           <Route path="/playbooks" element={<Playbooks />} />
                           <Route path="/playgrounds" element={<Playgrounds />} />
                           <Route path="/configuration" element={<Configuration />} />
+                          <Route path="/account" element={<Account />} />
                           <Route path="/monitor" element={<Monitor />} />
                           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                           <Route path="*" element={<NotFound />} />
