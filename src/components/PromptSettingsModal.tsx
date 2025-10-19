@@ -260,16 +260,16 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
             <SheetTitle className="text-2xl">System Prompts Configuration</SheetTitle>
           </SheetHeader>
 
-        <Tabs defaultValue="question" className="flex-1 flex flex-col overflow-hidden px-6">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+        <Tabs defaultValue="question" className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="grid w-full grid-cols-2 mb-4 mx-6">
             <TabsTrigger value="question">Question Generation</TabsTrigger>
             <TabsTrigger value="answer">Answer Generation</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="question" className="hidden flex-1 flex-col gap-4 overflow-hidden mt-0 data-[state=active]:flex">
+          <TabsContent value="question" className="hidden flex-1 flex-col gap-4 overflow-hidden mt-0 p-4 data-[state=active]:flex">
             {questionPrompts.length > 0 ? (
               <>
-                <div className="space-y-2 p-4 rounded-lg border">
+                <div className="space-y-2">
                   <Label className="text-sm font-medium">Prompt Template</Label>
                   <Select
                     value={selectedQuestionPrompt?.id}
@@ -296,7 +296,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                 </div>
 
                 {selectedQuestionPrompt && questionVersions.length > 0 && (
-                  <div className="space-y-2 p-4 rounded-lg border">
+                  <div className="space-y-2">
                     <Label className="text-sm font-medium flex items-center gap-2">
                       <History className="h-4 w-4" />
                       Version
@@ -319,7 +319,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                   </div>
                 )}
 
-                <div className="flex-1 flex flex-col gap-2 min-h-0 p-4 rounded-lg border">
+                <div className="flex-1 flex flex-col gap-2 min-h-0">
                   <Label className="text-sm font-medium">Prompt Content</Label>
                   <Textarea
                     value={questionContent}
@@ -349,10 +349,10 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
             )}
           </TabsContent>
 
-          <TabsContent value="answer" className="hidden flex-1 flex-col gap-4 overflow-hidden mt-0 data-[state=active]:flex">
+          <TabsContent value="answer" className="hidden flex-1 flex-col gap-4 overflow-hidden mt-0 p-4 data-[state=active]:flex">
             {answerPrompts.length > 0 ? (
               <>
-                <div className="space-y-2 p-4 rounded-lg border">
+                <div className="space-y-2">
                   <Label className="text-sm font-medium">Prompt Template</Label>
                   <Select
                     value={selectedAnswerPrompt?.id}
@@ -379,7 +379,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                 </div>
 
                 {selectedAnswerPrompt && answerVersions.length > 0 && (
-                  <div className="space-y-2 p-4 rounded-lg border">
+                  <div className="space-y-2">
                     <Label className="text-sm font-medium flex items-center gap-2">
                       <History className="h-4 w-4" />
                       Version
@@ -402,7 +402,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                   </div>
                 )}
 
-                <div className="flex-1 flex flex-col gap-2 min-h-0 p-4 rounded-lg border">
+                <div className="flex-1 flex flex-col gap-2 min-h-0">
                   <Label className="text-sm font-medium">Prompt Content</Label>
                   <Textarea
                     value={answerContent}
