@@ -525,7 +525,28 @@ export default function Datasets() {
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4 max-h-[60vh] overflow-y-auto">
-            {selectedFile?.content ? (
+            {selectedFile?.file_type === 'application/pdf' || selectedFile?.file_name?.toLowerCase().endsWith('.pdf') ? (
+              <div className="text-center py-8 space-y-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-2">
+                  <File className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-2">PDF Preview Not Available</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    PDF files cannot be previewed inline. The file has been synced to your inventory.
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
+                    <span>Type: PDF Document</span>
+                    {selectedFile?.file_size && (
+                      <>
+                        <span>•</span>
+                        <span>{(selectedFile.file_size / 1024).toFixed(2)} KB</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : selectedFile?.content ? (
               <pre className="text-sm whitespace-pre-wrap bg-muted p-4 rounded-lg">
                 {selectedFile.content}
               </pre>
