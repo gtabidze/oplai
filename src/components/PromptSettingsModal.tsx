@@ -466,20 +466,34 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-medium">Prompt Template</Label>
-                    {selectedQuestionPrompt && (
+                    <div className="flex gap-2">
+                      {selectedQuestionPrompt && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeletePromptId(selectedQuestionPrompt.id)}
+                          className="h-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      )}
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={() => setDeletePromptId(selectedQuestionPrompt.id)}
-                        className="h-8 text-destructive hover:text-destructive"
+                        onClick={() => {
+                          setCreatePromptType("question");
+                          setIsCreateDialogOpen(true);
+                        }}
+                        className="h-8"
                       >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Delete Prompt
+                        <Plus className="h-4 w-4 mr-1" />
+                        New Prompt
                       </Button>
-                    )}
+                    </div>
                   </div>
                   <Select
-                    value={selectedQuestionPrompt?.id}
+                    value={selectedQuestionPrompt?.id || ""}
                     onValueChange={(value) => {
                       const prompt = questionPrompts.find(p => p.id === value);
                       setSelectedQuestionPrompt(prompt || null);
@@ -522,7 +536,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                       )}
                     </div>
                     <Select
-                      value={selectedQuestionVersion?.id}
+                      value={selectedQuestionVersion?.id || ""}
                       onValueChange={(value) => handleVersionChange(value, "question")}
                     >
                       <SelectTrigger className="h-10">
@@ -575,20 +589,34 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-medium">Prompt Template</Label>
-                    {selectedAnswerPrompt && (
+                    <div className="flex gap-2">
+                      {selectedAnswerPrompt && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeletePromptId(selectedAnswerPrompt.id)}
+                          className="h-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      )}
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={() => setDeletePromptId(selectedAnswerPrompt.id)}
-                        className="h-8 text-destructive hover:text-destructive"
+                        onClick={() => {
+                          setCreatePromptType("answer");
+                          setIsCreateDialogOpen(true);
+                        }}
+                        className="h-8"
                       >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Delete Prompt
+                        <Plus className="h-4 w-4 mr-1" />
+                        New Prompt
                       </Button>
-                    )}
+                    </div>
                   </div>
                   <Select
-                    value={selectedAnswerPrompt?.id}
+                    value={selectedAnswerPrompt?.id || ""}
                     onValueChange={(value) => {
                       const prompt = answerPrompts.find(p => p.id === value);
                       setSelectedAnswerPrompt(prompt || null);
@@ -631,7 +659,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                       )}
                     </div>
                     <Select
-                      value={selectedAnswerVersion?.id}
+                      value={selectedAnswerVersion?.id || ""}
                       onValueChange={(value) => handleVersionChange(value, "answer")}
                     >
                       <SelectTrigger className="h-10">
@@ -695,6 +723,9 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
         <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0">
           <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
             <DialogTitle>Create New {createPromptType === "question" ? "Question" : "Answer"} Prompt</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Create a structured system prompt with formatting, restrictions, and best practices.
+            </p>
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
