@@ -21,6 +21,8 @@ interface APIEndpoint {
   };
 }
 
+const isUuid = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -79,8 +81,14 @@ Deno.serve(async (req) => {
       .eq('user_id', apiEndpoint.user_id);
 
     // If not Golden Datasets API (which shows all), filter by selected playbooks
-    if (apiEndpoint.name !== 'Golden Datasets API' && apiEndpoint.selected_playbooks.length > 0) {
-      playbooksQuery = playbooksQuery.in('id', apiEndpoint.selected_playbooks);
+    const selected = Array.isArray(apiEndpoint.selected_playbooks) ? apiEndpoint.selected_playbooks : [];
+    const validIds = selected.filter((v) => typeof v === 'string' && isUuid(v));
+    if (apiEndpoint.name !== 'Golden Datasets API' && selected.length > 0) {
+      if (validIds.length > 0) {
+        playbooksQuery = playbooksQuery.in('id', validIds);
+      } else {
+        console.log('No valid UUIDs in selected_playbooks; returning all playbooks for this user');
+      }
     }
 
     const { data: playbooks, error: playbooksError } = await playbooksQuery;
