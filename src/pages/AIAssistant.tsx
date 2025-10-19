@@ -4,19 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Loader2, Bot, User } from "lucide-react";
+import { Send, Loader2, Bot, User, ThumbsUp, ThumbsDown } from "lucide-react";
 import { toast } from "sonner";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  feedback?: "up" | "down" | null;
 }
 
 const AIAssistant = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hello! I'm your AI assistant. I have access to all your playbooks, questions, answers, scores, and system prompts. How can I help you today?"
+      content: "Hello! I'm your AI assistant. I have access to all your playbooks, questions, answers, scores, and system prompts. How can I help you today?",
+      feedback: null
     }
   ]);
   const [input, setInput] = useState("");
@@ -56,7 +58,8 @@ const AIAssistant = () => {
 
       const assistantMessage: Message = {
         role: "assistant",
-        content: data.response
+        content: data.response,
+        feedback: null
       };
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
@@ -74,20 +77,24 @@ const AIAssistant = () => {
     }
   };
 
-  return (
-    <div className="flex-1 flex flex-col h-screen">
-      <div className="border-b border-border p-4">
-        <div className="flex items-center gap-2">
-          <Bot className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">AI Assistant</h1>
-        </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          Ask me anything about your playbooks, questions, answers, and prompts
-        </p>
-      </div>
+  const handleFeedback = (index: number, feedback: "up" | "down") => {
+    setMessages(prev => prev.map((msg, i) => 
+      i === index ? { ...msg, feedback: msg.feedback === feedback ? null : feedback } : msg
+    ));
+  };
 
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="max-w-4xl mx-auto space-y-4">
+  return (
+    <div className="flex-1 flex flex-col h-screen p-8">
+      <div className="max-w-4xl mx-auto w-full flex flex-col h-full space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">AI Assistant</h1>
+          <p className="text-muted-foreground mt-2">
+            Ask me anything about your playbooks, questions, answers, and system prompts
+          </p>
+        </div>
+
+      <ScrollArea className="flex-1" ref={scrollRef}>
+        <div className="space-y-4">
           {messages.map((message, index) => (
             <div
               key={index}
@@ -100,15 +107,41 @@ const AIAssistant = () => {
                   <Bot className="h-4 w-4 text-primary" />
                 </div>
               )}
-              <Card
-                className={`p-3 max-w-[80%] ${
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
-              >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-              </Card>
+              <div className="flex flex-col gap-2 max-w-[80%]">
+                <Card
+                  className={`p-3 ${
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                </Card>
+                {message.role === "assistant" && index > 0 && (
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className={`h-7 w-7 p-0 ${
+                        message.feedback === "up" ? "text-primary" : "text-muted-foreground"
+                      }`}
+                      onClick={() => handleFeedback(index, "up")}
+                    >
+                      <ThumbsUp className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className={`h-7 w-7 p-0 ${
+                        message.feedback === "down" ? "text-destructive" : "text-muted-foreground"
+                      }`}
+                      onClick={() => handleFeedback(index, "down")}
+                    >
+                      <ThumbsDown className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+              </div>
               {message.role === "user" && (
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                   <User className="h-4 w-4 text-primary" />
@@ -129,8 +162,8 @@ const AIAssistant = () => {
         </div>
       </ScrollArea>
 
-      <div className="border-t border-border p-4">
-        <div className="max-w-4xl mx-auto flex gap-2">
+      <div className="border-t border-border pt-4">
+        <div className="flex gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -151,6 +184,7 @@ const AIAssistant = () => {
             )}
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );
