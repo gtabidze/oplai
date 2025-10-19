@@ -15,6 +15,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Collaborator {
   id: string;
@@ -38,6 +45,7 @@ export const PlaybookCollaborators = ({ playbookId, ownerId }: PlaybookCollabora
   const [copied, setCopied] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [emailToAdd, setEmailToAdd] = useState("");
+  const [selectedRole, setSelectedRole] = useState("viewer");
 
   const isOwner = user?.id === ownerId;
 
@@ -170,7 +178,7 @@ export const PlaybookCollaborators = ({ playbookId, ownerId }: PlaybookCollabora
       .insert({
         playbook_id: playbookId,
         user_id: profiles.id,
-        role: 'editor'
+        role: selectedRole
       });
 
     if (addError) {
@@ -185,6 +193,7 @@ export const PlaybookCollaborators = ({ playbookId, ownerId }: PlaybookCollabora
 
     toast.success('Collaborator added');
     setEmailToAdd("");
+    setSelectedRole("viewer");
     setShowShareDialog(false);
   };
 
@@ -220,17 +229,31 @@ export const PlaybookCollaborators = ({ playbookId, ownerId }: PlaybookCollabora
                   <DialogTitle>Share Playbook</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div>
-                    <Label>Add by Email</Label>
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        type="email"
-                        placeholder="colleague@example.com"
-                        value={emailToAdd}
-                        onChange={(e) => setEmailToAdd(e.target.value)}
-                      />
-                      <Button onClick={addCollaboratorByEmail}>Add</Button>
-                    </div>
+                  <div className="space-y-3">
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      placeholder="colleague@example.com"
+                      value={emailToAdd}
+                      onChange={(e) => setEmailToAdd(e.target.value)}
+                    />
+                    
+                    <Label>Role</Label>
+                    <Select value={selectedRole} onValueChange={setSelectedRole}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="owner">Owner</SelectItem>
+                        <SelectItem value="viewer">Viewer</SelectItem>
+                        <SelectItem value="commenter">Commenter</SelectItem>
+                        <SelectItem value="evaluator">Evaluator</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Button onClick={addCollaboratorByEmail} className="w-full">
+                      Add Collaborator
+                    </Button>
                   </div>
 
                   <div className="relative">
