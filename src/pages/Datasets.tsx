@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -300,8 +301,21 @@ export default function Datasets() {
           </p>
         </div>
 
-        {/* Cloud Providers Section */}
-        <div className="space-y-6">
+        <Tabs defaultValue="providers" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="providers" className="flex items-center gap-2">
+              <Cloud className="h-4 w-4" />
+              Providers
+            </TabsTrigger>
+            <TabsTrigger value="files" className="flex items-center gap-2">
+              <File className="h-4 w-4" />
+              Files ({syncedFiles.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="providers" className="space-y-6 mt-6">
+            {/* Cloud Providers Section */}
+            <div className="space-y-6">
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
@@ -389,10 +403,12 @@ export default function Datasets() {
             </div>
           </div>
         ))}
-        </div>
+            </div>
+          </TabsContent>
 
-        {/* Synced Files Section */}
-        <div className="space-y-6">
+          <TabsContent value="files" className="space-y-6 mt-6">
+            {/* Synced Files Section */}
+            <div className="space-y-6">
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
@@ -481,7 +497,9 @@ export default function Datasets() {
               </CardContent>
             </Card>
           )}
-        </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* File Content Dialog */}
