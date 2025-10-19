@@ -11,6 +11,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -18,7 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { History, Save, Plus, Sparkles, FileText } from "lucide-react";
+import { History, Save, Plus, Sparkles, FileText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -134,6 +144,8 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
   const [hasChanges, setHasChanges] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [promptContext, setPromptContext] = useState("");
+  const [deletePromptId, setDeletePromptId] = useState<string | null>(null);
+  const [deleteVersionId, setDeleteVersionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user && open) {
@@ -378,6 +390,62 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
     }
   };
 
+  const deletePrompt = async () => {
+    if (!deletePromptId) return;
+
+    try {
+      const { error } = await supabase
+        .from("prompts")
+        .delete()
+        .eq("id", deletePromptId);
+
+      if (error) throw error;
+
+      toast.success("Prompt deleted successfully!");
+      setDeletePromptId(null);
+      
+      // Reset selection if deleted prompt was selected
+      if (selectedQuestionPrompt?.id === deletePromptId) {
+        setSelectedQuestionPrompt(null);
+        setQuestionContent("");
+      }
+      if (selectedAnswerPrompt?.id === deletePromptId) {
+        setSelectedAnswerPrompt(null);
+        setAnswerContent("");
+      }
+      
+      loadPrompts();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete prompt");
+    }
+  };
+
+  const deleteVersion = async () => {
+    if (!deleteVersionId) return;
+
+    try {
+      const { error } = await supabase
+        .from("prompt_versions")
+        .delete()
+        .eq("id", deleteVersionId);
+
+      if (error) throw error;
+
+      toast.success("Version deleted successfully!");
+      setDeleteVersionId(null);
+      
+      // Reload versions
+      if (selectedQuestionPrompt) {
+        loadVersions(selectedQuestionPrompt.id, "question");
+      }
+      if (selectedAnswerPrompt) {
+        loadVersions(selectedAnswerPrompt.id, "answer");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete version");
+    }
+  };
+
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -396,7 +464,20 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
             {questionPrompts.length > 0 ? (
               <>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Prompt Template</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Prompt Template</Label>
+                    {selectedQuestionPrompt && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeletePromptId(selectedQuestionPrompt.id)}
+                        className="h-8 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete Prompt
+                      </Button>
+                    )}
+                  </div>
                   <Select
                     value={selectedQuestionPrompt?.id}
                     onValueChange={(value) => {
@@ -423,10 +504,23 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
 
                 {selectedQuestionPrompt && questionVersions.length > 0 && (
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                      <History className="h-4 w-4" />
-                      Version
-                    </Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <History className="h-4 w-4" />
+                        Version
+                      </Label>
+                      {selectedQuestionVersion && questionVersions.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteVersionId(selectedQuestionVersion.id)}
+                          className="h-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete Version
+                        </Button>
+                      )}
+                    </div>
                     <Select
                       value={selectedQuestionVersion?.id}
                       onValueChange={(value) => handleVersionChange(value, "question")}
@@ -479,7 +573,20 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
             {answerPrompts.length > 0 ? (
               <>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Prompt Template</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Prompt Template</Label>
+                    {selectedAnswerPrompt && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeletePromptId(selectedAnswerPrompt.id)}
+                        className="h-8 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete Prompt
+                      </Button>
+                    )}
+                  </div>
                   <Select
                     value={selectedAnswerPrompt?.id}
                     onValueChange={(value) => {
@@ -506,10 +613,23 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
 
                 {selectedAnswerPrompt && answerVersions.length > 0 && (
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                      <History className="h-4 w-4" />
-                      Version
-                    </Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <History className="h-4 w-4" />
+                        Version
+                      </Label>
+                      {selectedAnswerVersion && answerVersions.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteVersionId(selectedAnswerVersion.id)}
+                          className="h-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete Version
+                        </Button>
+                      )}
+                    </div>
                     <Select
                       value={selectedAnswerVersion?.id}
                       onValueChange={(value) => handleVersionChange(value, "answer")}
@@ -653,6 +773,40 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deletePromptId} onOpenChange={() => setDeletePromptId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Prompt</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this prompt? This will also delete all of its versions. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={deletePrompt} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteVersionId} onOpenChange={() => setDeleteVersionId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Version</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this version? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteVersion} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
