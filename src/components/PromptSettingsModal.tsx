@@ -9,9 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { History, Save, RotateCcw } from "lucide-react";
+import { History, Save, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,6 +51,10 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
   const [selectedAnswerVersion, setSelectedAnswerVersion] = useState<PromptVersion | null>(null);
   const [questionContent, setQuestionContent] = useState("");
   const [answerContent, setAnswerContent] = useState("");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newPromptName, setNewPromptName] = useState("");
+  const [newPromptContent, setNewPromptContent] = useState("");
+  const [createPromptType, setCreatePromptType] = useState<"question" | "answer">("question");
 
   useEffect(() => {
     if (user && open) {
@@ -147,6 +152,46 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
     }
   };
 
+  const createPrompt = async () => {
+    if (!newPromptName.trim() || !newPromptContent.trim()) {
+      toast.error("Please provide both name and content");
+      return;
+    }
+
+    try {
+      const { data: prompt, error: promptError } = await supabase
+        .from("prompts")
+        .insert({
+          user_id: user?.id,
+          name: newPromptName.trim(),
+          type: createPromptType,
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (promptError) throw promptError;
+
+      const { error: versionError } = await supabase
+        .from("prompt_versions")
+        .insert({
+          prompt_id: prompt.id,
+          content: newPromptContent,
+          version_number: 1,
+        });
+
+      if (versionError) throw versionError;
+
+      toast.success("Prompt created successfully!");
+      setNewPromptName("");
+      setNewPromptContent("");
+      setIsCreateDialogOpen(false);
+      loadPrompts();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -155,170 +200,213 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
         </DialogHeader>
 
         <Tabs defaultValue="question" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="question" className="text-base">
-              Question Generation
-            </TabsTrigger>
-            <TabsTrigger value="answer" className="text-base">
-              Answer Generation
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="question">Question Generation</TabsTrigger>
+            <TabsTrigger value="answer">Answer Generation</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="question" className="flex-1 flex flex-col gap-6 overflow-hidden mt-0">
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">Select Prompt Template</Label>
-              {questionPrompts.length > 0 && (
-                <Select
-                  value={selectedQuestionPrompt?.id}
-                  onValueChange={(value) => {
-                    const prompt = questionPrompts.find(p => p.id === value);
-                    setSelectedQuestionPrompt(prompt || null);
-                  }}
-                >
-                  <SelectTrigger className="h-12 text-base border-2 hover:border-primary/50 transition-colors">
-                    <SelectValue placeholder="Select a prompt template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {questionPrompts.map((prompt) => (
-                      <SelectItem key={prompt.id} value={prompt.id} className="text-base py-3">
-                        <div className="flex items-center gap-2">
+          <TabsContent value="question" className="flex-1 flex flex-col gap-4 overflow-hidden mt-0">
+            {questionPrompts.length > 0 ? (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Prompt Template</Label>
+                  <Select
+                    value={selectedQuestionPrompt?.id}
+                    onValueChange={(value) => {
+                      const prompt = questionPrompts.find(p => p.id === value);
+                      setSelectedQuestionPrompt(prompt || null);
+                    }}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Select a prompt template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {questionPrompts.map((prompt) => (
+                        <SelectItem key={prompt.id} value={prompt.id}>
                           {prompt.name}
                           {prompt.is_active && (
-                            <Badge variant="default" className="ml-2">Active</Badge>
+                            <Badge variant="default" className="ml-2 text-xs">Active</Badge>
                           )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {selectedQuestionPrompt && questionVersions.length > 0 && (
-              <div className="space-y-3">
-                <Label className="text-base font-semibold flex items-center gap-2">
-                  <History className="h-5 w-5" />
-                  Version History
-                </Label>
-                <Select
-                  value={selectedQuestionVersion?.id}
-                  onValueChange={(value) => handleVersionChange(value, "question")}
+                {selectedQuestionPrompt && questionVersions.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      Version
+                    </Label>
+                    <Select
+                      value={selectedQuestionVersion?.id}
+                      onValueChange={(value) => handleVersionChange(value, "question")}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Select version" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {questionVersions.map((version) => (
+                          <SelectItem key={version.id} value={version.id}>
+                            Version {version.version_number} - {new Date(version.created_at).toLocaleDateString()}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="flex-1 flex flex-col gap-2 min-h-0">
+                  <Label className="text-sm font-medium">Prompt Content</Label>
+                  <Textarea
+                    value={questionContent}
+                    onChange={(e) => setQuestionContent(e.target.value)}
+                    className="flex-1 resize-none font-mono text-base leading-relaxed"
+                    placeholder="Select a prompt to view its content..."
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
+                <p className="text-muted-foreground">No question generation prompts available</p>
+                <Button 
+                  onClick={() => {
+                    setCreatePromptType("question");
+                    setIsCreateDialogOpen(true);
+                  }}
+                  size="lg"
                 >
-                  <SelectTrigger className="h-12 text-base border-2 hover:border-primary/50 transition-colors">
-                    <SelectValue placeholder="Select version" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {questionVersions.map((version) => (
-                      <SelectItem key={version.id} value={version.id} className="text-base py-3">
-                        <div className="flex items-center justify-between w-full">
-                          <span>Version {version.version_number}</span>
-                          <span className="text-sm text-muted-foreground ml-4">
-                            {new Date(version.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Question Prompt
+                </Button>
               </div>
             )}
-
-            <div className="flex-1 flex flex-col gap-3 min-h-0">
-              <Label className="text-base font-semibold">Prompt Content</Label>
-              <div className="flex-1 relative rounded-lg border-2 overflow-hidden hover:border-primary/50 transition-colors bg-muted/30">
-                <Textarea
-                  value={questionContent}
-                  onChange={(e) => setQuestionContent(e.target.value)}
-                  className="h-full resize-none font-mono text-sm border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-4"
-                  placeholder="Select a prompt to view its content..."
-                />
-              </div>
-            </div>
           </TabsContent>
 
-          <TabsContent value="answer" className="flex-1 flex flex-col gap-6 overflow-hidden mt-0">
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">Select Prompt Template</Label>
-              {answerPrompts.length > 0 && (
-                <Select
-                  value={selectedAnswerPrompt?.id}
-                  onValueChange={(value) => {
-                    const prompt = answerPrompts.find(p => p.id === value);
-                    setSelectedAnswerPrompt(prompt || null);
-                  }}
-                >
-                  <SelectTrigger className="h-12 text-base border-2 hover:border-primary/50 transition-colors">
-                    <SelectValue placeholder="Select a prompt template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {answerPrompts.map((prompt) => (
-                      <SelectItem key={prompt.id} value={prompt.id} className="text-base py-3">
-                        <div className="flex items-center gap-2">
+          <TabsContent value="answer" className="flex-1 flex flex-col gap-4 overflow-hidden mt-0">
+            {answerPrompts.length > 0 ? (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Prompt Template</Label>
+                  <Select
+                    value={selectedAnswerPrompt?.id}
+                    onValueChange={(value) => {
+                      const prompt = answerPrompts.find(p => p.id === value);
+                      setSelectedAnswerPrompt(prompt || null);
+                    }}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Select a prompt template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {answerPrompts.map((prompt) => (
+                        <SelectItem key={prompt.id} value={prompt.id}>
                           {prompt.name}
                           {prompt.is_active && (
-                            <Badge variant="default" className="ml-2">Active</Badge>
+                            <Badge variant="default" className="ml-2 text-xs">Active</Badge>
                           )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {selectedAnswerPrompt && answerVersions.length > 0 && (
-              <div className="space-y-3">
-                <Label className="text-base font-semibold flex items-center gap-2">
-                  <History className="h-5 w-5" />
-                  Version History
-                </Label>
-                <Select
-                  value={selectedAnswerVersion?.id}
-                  onValueChange={(value) => handleVersionChange(value, "answer")}
+                {selectedAnswerPrompt && answerVersions.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      Version
+                    </Label>
+                    <Select
+                      value={selectedAnswerVersion?.id}
+                      onValueChange={(value) => handleVersionChange(value, "answer")}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Select version" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {answerVersions.map((version) => (
+                          <SelectItem key={version.id} value={version.id}>
+                            Version {version.version_number} - {new Date(version.created_at).toLocaleDateString()}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="flex-1 flex flex-col gap-2 min-h-0">
+                  <Label className="text-sm font-medium">Prompt Content</Label>
+                  <Textarea
+                    value={answerContent}
+                    onChange={(e) => setAnswerContent(e.target.value)}
+                    className="flex-1 resize-none font-mono text-base leading-relaxed"
+                    placeholder="Select a prompt to view its content..."
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
+                <p className="text-muted-foreground">No answer generation prompts available</p>
+                <Button 
+                  onClick={() => {
+                    setCreatePromptType("answer");
+                    setIsCreateDialogOpen(true);
+                  }}
+                  size="lg"
                 >
-                  <SelectTrigger className="h-12 text-base border-2 hover:border-primary/50 transition-colors">
-                    <SelectValue placeholder="Select version" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {answerVersions.map((version) => (
-                      <SelectItem key={version.id} value={version.id} className="text-base py-3">
-                        <div className="flex items-center justify-between w-full">
-                          <span>Version {version.version_number}</span>
-                          <span className="text-sm text-muted-foreground ml-4">
-                            {new Date(version.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Answer Prompt
+                </Button>
               </div>
             )}
-
-            <div className="flex-1 flex flex-col gap-3 min-h-0">
-              <Label className="text-base font-semibold">Prompt Content</Label>
-              <div className="flex-1 relative rounded-lg border-2 overflow-hidden hover:border-primary/50 transition-colors bg-muted/30">
-                <Textarea
-                  value={answerContent}
-                  onChange={(e) => setAnswerContent(e.target.value)}
-                  className="h-full resize-none font-mono text-sm border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-4"
-                  placeholder="Select a prompt to view its content..."
-                />
-              </div>
-            </div>
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end gap-3 pt-6 border-t mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)} size="lg">
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!selectedQuestionPrompt || !selectedAnswerPrompt} size="lg" className="gap-2">
+          <Button onClick={handleSave} disabled={!selectedQuestionPrompt || !selectedAnswerPrompt} className="gap-2">
             <Save className="h-4 w-4" />
             Save Active Prompts
           </Button>
         </div>
       </DialogContent>
+
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New {createPromptType === "question" ? "Question" : "Answer"} Prompt</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="prompt-name">Prompt Name</Label>
+              <Input
+                id="prompt-name"
+                placeholder="e.g., Default, Creative, Technical"
+                value={newPromptName}
+                onChange={(e) => setNewPromptName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="prompt-content">Content</Label>
+              <Textarea
+                id="prompt-content"
+                rows={10}
+                placeholder="Enter your prompt content..."
+                value={newPromptContent}
+                onChange={(e) => setNewPromptContent(e.target.value)}
+                className="font-mono"
+              />
+            </div>
+            <Button onClick={createPrompt} className="w-full">
+              Create Prompt
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };
