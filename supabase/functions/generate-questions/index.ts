@@ -31,11 +31,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful assistant that generates realistic user questions based on provided documentation. Generate exactly 10 questions that a user might ask about the content. Return ONLY a JSON array of strings, nothing else.'
+            content: 'You are a helpful assistant that generates insightful questions. Analyze the provided input text and write 8 questions potential readers should have about this document. Return ONLY a JSON array of strings, nothing else.'
           },
           {
             role: 'user',
-            content: `Based on this documentation, generate 10 questions a user might ask:\n\n${documentContent}`
+            content: `Analyze this document and generate 8 questions:\n\n${documentContent}`
           }
         ],
       }),
@@ -79,7 +79,7 @@ serve(async (req) => {
                  !trimmed.startsWith('```');
         })
         .map((q: string) => q.replace(/^\d+\.\s*/, '').replace(/^[-*]\s*/, '').replace(/^["']|["']$/g, '').trim())
-        .slice(0, 10);
+        .slice(0, 8);
     }
 
     console.log('Generated questions count:', questions.length);

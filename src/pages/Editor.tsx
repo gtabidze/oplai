@@ -53,13 +53,13 @@ const Editor = () => {
     if (plaibook) {
       setCurrentPlaibook(plaibook);
       setTitle(plaibook.title);
-      if (editor && plaibook.content !== editor.getHTML()) {
+      if (editor && !editor.isFocused) {
         editor.commands.setContent(plaibook.content);
       }
     } else {
       navigate('/');
     }
-  }, [id, plaibooks, navigate, editor]);
+  }, [id, navigate, editor]);
 
   useEffect(() => {
     if (!currentPlaibook) return;

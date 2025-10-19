@@ -31,11 +31,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful AI assistant. Answer the user\'s question based on the provided documentation. Be concise, accurate, and helpful. If the documentation doesn\'t contain enough information to answer the question, say so clearly.'
+            content: 'You are a professional document expert. Review the provided document carefully and answer the question in a concise, clear, and professional tone. Base your answer strictly on the document content.'
           },
           {
             role: 'user',
-            content: `Documentation:\n\n${documentContent}\n\nQuestion: ${question}\n\nPlease answer this question based on the documentation above.`
+            content: `Document:\n\n${documentContent}\n\nQuestion: ${question}\n\nProvide a concise and professional answer based on the document.`
           }
         ],
       }),
