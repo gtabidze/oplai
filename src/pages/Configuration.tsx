@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, MessageSquare, Zap, Save, RotateCcw, Key } from "lucide-react";
+import { Settings, MessageSquare, Zap, Save, RotateCcw, Key, User as UserIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Select,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
+import { AccountSettings } from "@/components/AccountSettings";
 
 const DEFAULT_QUESTION_PROMPT = `You are an expert at generating insightful evaluation questions. 
 Generate 5 diverse questions based on the provided content that test understanding, analysis, and application of the material.
@@ -153,8 +154,12 @@ const Configuration = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="prompts" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="account" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="account" className="gap-2">
+              <UserIcon className="h-4 w-4" />
+              Account
+            </TabsTrigger>
             <TabsTrigger value="prompts" className="gap-2">
               <MessageSquare className="h-4 w-4" />
               Prompts
@@ -172,6 +177,10 @@ const Configuration = () => {
               Advanced
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="account" className="space-y-6">
+            <AccountSettings />
+          </TabsContent>
 
           <TabsContent value="prompts" className="space-y-6">
             <Card>
