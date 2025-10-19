@@ -546,6 +546,9 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                         {questionVersions.map((version) => (
                           <SelectItem key={version.id} value={version.id}>
                             Version {version.version_number} - {new Date(version.created_at).toLocaleDateString()}
+                            {selectedQuestionPrompt?.is_active && version.version_number === Math.max(...questionVersions.map(v => v.version_number)) && (
+                              <Badge variant="default" className="ml-2 text-xs">Active</Badge>
+                            )}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -669,6 +672,9 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
                         {answerVersions.map((version) => (
                           <SelectItem key={version.id} value={version.id}>
                             Version {version.version_number} - {new Date(version.created_at).toLocaleDateString()}
+                            {selectedAnswerPrompt?.is_active && version.version_number === Math.max(...answerVersions.map(v => v.version_number)) && (
+                              <Badge variant="default" className="ml-2 text-xs">Active</Badge>
+                            )}
                           </SelectItem>
                         ))}
                       </SelectContent>
