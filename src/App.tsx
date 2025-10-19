@@ -19,6 +19,7 @@ import Account from "./pages/Account";
 import Monitor from "./pages/Monitor";
 import Published from "./pages/Published";
 import JoinPlaybook from "./pages/JoinPlaybook";
+import AIAssistant from "./pages/AIAssistant";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ const App = () => (
                           <Route path="/" element={<Home />} />
                           <Route path="/doc/:id" element={<Editor />} />
                           <Route path="/playbooks" element={<Playbooks />} />
+                          <Route path="/ai-assistant" element={<AIAssistant />} />
                           <Route path="/playgrounds" element={<Playgrounds />} />
                           <Route path="/datasets" element={<Datasets />} />
                           <Route path="/apis" element={<APIs />} />

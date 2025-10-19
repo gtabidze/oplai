@@ -1,4 +1,4 @@
-import { Home, BookOpen, ChartArea, Workflow, Database, Code2, Settings, LogOut, User as UserIcon } from "lucide-react";
+import { Home, BookOpen, ChartArea, Workflow, Database, Code2, Settings, LogOut, User as UserIcon, Bot } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -36,6 +36,11 @@ const items = [
     title: "Playbooks",
     url: "/playbooks",
     icon: BookOpen,
+  },
+  {
+    title: "AI Assistant",
+    url: "/ai-assistant",
+    icon: Bot,
   },
   {
     title: "Monitor",
