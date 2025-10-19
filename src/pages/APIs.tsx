@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Code2, Copy, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Code2, Copy, Trash2, RefreshCw, ChevronDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,15 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useLocalStorage } from "@/lib/localStorage";
+import { Plaibook } from "@/lib/types";
 
 interface APIEndpoint {
   id: string;
@@ -24,8 +32,8 @@ interface APIEndpoint {
   isActive: boolean;
   createdAt: number;
   updatedAt: number;
+  selectedPlaybooks: string[]; // Array of playbook IDs
   dataPoints: {
-    playbookName: boolean;
     playbookContent: boolean;
     questions: boolean;
     answers: boolean;
@@ -36,29 +44,13 @@ interface APIEndpoint {
 }
 
 const APIs = () => {
-  const [endpoints, setEndpoints] = useState<APIEndpoint[]>([
-    {
-      id: "1",
-      name: "Main Playbook API",
-      isActive: true,
-      createdAt: Date.now() - 86400000,
-      updatedAt: Date.now() - 3600000,
-      dataPoints: {
-        playbookName: true,
-        playbookContent: true,
-        questions: true,
-        answers: true,
-        scores: true,
-        createdDate: true,
-        updatedDate: true,
-      },
-    },
-  ]);
+  const [plaibooks] = useLocalStorage<Plaibook[]>("plaibooks", []);
+  const [endpoints, setEndpoints] = useState<APIEndpoint[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newEndpoint, setNewEndpoint] = useState<Partial<APIEndpoint>>({
     name: "",
+    selectedPlaybooks: [],
     dataPoints: {
-      playbookName: true,
       playbookContent: true,
       questions: true,
       answers: true,
@@ -74,12 +66,18 @@ const APIs = () => {
       return;
     }
 
+    if (!newEndpoint.selectedPlaybooks || newEndpoint.selectedPlaybooks.length === 0) {
+      toast.error("Please select at least one playbook");
+      return;
+    }
+
     const endpoint: APIEndpoint = {
       id: crypto.randomUUID(),
       name: newEndpoint.name,
       isActive: false,
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      selectedPlaybooks: newEndpoint.selectedPlaybooks!,
       dataPoints: newEndpoint.dataPoints!,
     };
 
@@ -87,8 +85,8 @@ const APIs = () => {
     setIsDialogOpen(false);
     setNewEndpoint({
       name: "",
+      selectedPlaybooks: [],
       dataPoints: {
-        playbookName: true,
         playbookContent: true,
         questions: true,
         answers: true,
@@ -98,6 +96,28 @@ const APIs = () => {
       },
     });
     toast.success("API endpoint created successfully");
+  };
+
+  const togglePlaybookSelection = (playbookId: string) => {
+    const current = newEndpoint.selectedPlaybooks || [];
+    if (current.includes(playbookId)) {
+      setNewEndpoint({
+        ...newEndpoint,
+        selectedPlaybooks: current.filter((id) => id !== playbookId),
+      });
+    } else {
+      setNewEndpoint({
+        ...newEndpoint,
+        selectedPlaybooks: [...current, playbookId],
+      });
+    }
+  };
+
+  const getPlaybookNames = (playbookIds: string[]) => {
+    return playbookIds
+      .map((id) => plaibooks.find((p) => p.id === id)?.title)
+      .filter(Boolean)
+      .join(", ");
   };
 
   const toggleEndpointStatus = (id: string) => {
@@ -176,27 +196,58 @@ const APIs = () => {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Select Playbooks</Label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-between bg-background hover:bg-accent"
+                      >
+                        <span className="truncate">
+                          {newEndpoint.selectedPlaybooks && newEndpoint.selectedPlaybooks.length > 0
+                            ? `${newEndpoint.selectedPlaybooks.length} playbook${newEndpoint.selectedPlaybooks.length > 1 ? 's' : ''} selected`
+                            : "Select playbooks..."}
+                        </span>
+                        <ChevronDown className="h-4 w-4 opacity-50 ml-2 flex-shrink-0" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[400px] max-h-[300px] overflow-y-auto bg-popover z-50">
+                      {plaibooks.length === 0 ? (
+                        <div className="p-4 text-sm text-muted-foreground text-center">
+                          No playbooks available. Create a playbook first.
+                        </div>
+                      ) : (
+                        plaibooks.map((playbook) => (
+                          <DropdownMenuCheckboxItem
+                            key={playbook.id}
+                            checked={newEndpoint.selectedPlaybooks?.includes(playbook.id)}
+                            onCheckedChange={() => togglePlaybookSelection(playbook.id)}
+                            className="cursor-pointer"
+                          >
+                            <span className="truncate">{playbook.title}</span>
+                          </DropdownMenuCheckboxItem>
+                        ))
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  {newEndpoint.selectedPlaybooks && newEndpoint.selectedPlaybooks.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {newEndpoint.selectedPlaybooks.map((id) => {
+                        const playbook = plaibooks.find((p) => p.id === id);
+                        return playbook ? (
+                          <Badge key={id} variant="secondary">
+                            {playbook.title}
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-3">
                   <Label>Data Points to Include</Label>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="playbookName"
-                        checked={newEndpoint.dataPoints?.playbookName}
-                        onCheckedChange={(checked) =>
-                          setNewEndpoint({
-                            ...newEndpoint,
-                            dataPoints: {
-                              ...newEndpoint.dataPoints!,
-                              playbookName: checked as boolean,
-                            },
-                          })
-                        }
-                      />
-                      <label htmlFor="playbookName" className="text-sm cursor-pointer">
-                        Playbook Name
-                      </label>
-                    </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="playbookContent"
@@ -374,6 +425,20 @@ const APIs = () => {
                         {window.location.origin}/api/v1/endpoint/{endpoint.id}
                       </code>
                       <p className="text-xs text-muted-foreground">API Endpoint URL</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Selected Playbooks:</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {endpoint.selectedPlaybooks.map((playbookId) => {
+                        const playbook = plaibooks.find((p) => p.id === playbookId);
+                        return playbook ? (
+                          <Badge key={playbookId} variant="secondary">
+                            {playbook.title}
+                          </Badge>
+                        ) : null;
+                      })}
                     </div>
                   </div>
 
