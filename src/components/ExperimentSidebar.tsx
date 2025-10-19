@@ -320,9 +320,11 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
                     <div className="flex items-center gap-2">
                       <Slider
                         value={[q.feedback?.score ?? 50]}
-                        onValueChange={(value) =>
-                          handleFeedback(q.id, q.feedback?.thumbsUp ?? true, value[0])
-                        }
+                        onValueChange={(value) => {
+                          const newScore = value[0];
+                          const thumbsUp = newScore >= 60;
+                          handleFeedback(q.id, thumbsUp, newScore);
+                        }}
                         max={100}
                         step={1}
                         className="w-24"
