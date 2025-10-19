@@ -1,4 +1,4 @@
-import { Home, BookOpen, Monitor, LayoutGrid, Database, Settings } from "lucide-react";
+import { Home, BookOpen, Monitor, LayoutGrid, Database, Settings, LogOut, User as UserIcon } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -14,6 +14,18 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const items = [
   { title: "Home", url: "/", icon: Home },
@@ -27,6 +39,24 @@ const items = [
 export function AppSidebar() {
   const { open } = useSidebar();
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const [profile, setProfile] = useState<{ full_name?: string; avatar_url?: string } | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("id", user.id)
+        .single()
+        .then(({ data }) => setProfile(data));
+    }
+  }, [user]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -69,8 +99,56 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t border-border p-2">
-        <SidebarTrigger />
+      <SidebarFooter className="border-t border-border">
+        {user && (
+          <div className="p-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-accent transition-colors">
+                  <Avatar className="h-8 w-8">
+                    {profile?.avatar_url && (
+                      <AvatarImage src={profile.avatar_url} />
+                    )}
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {profile?.full_name
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2) || user.email?.[0].toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  {open && (
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {profile?.full_name || user.email}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/configuration")}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+        <div className="p-2">
+          <SidebarTrigger />
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
