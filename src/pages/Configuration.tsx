@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
+import { PromptManager } from "@/components/PromptManager";
 
 const DEFAULT_QUESTION_PROMPT = `You are an expert at generating insightful evaluation questions. 
 Generate 5 diverse questions based on the provided content that test understanding, analysis, and application of the material.
@@ -174,69 +175,17 @@ const Configuration = () => {
           </TabsList>
 
           <TabsContent value="prompts" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Question Generation Prompt</CardTitle>
-                <CardDescription>
-                  Customize how questions are generated from your playbook content
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="question-prompt">System Prompt</Label>
-                  <Textarea
-                    id="question-prompt"
-                    value={questionPrompt}
-                    onChange={(e) => setQuestionPrompt(e.target.value)}
-                    rows={10}
-                    className="font-mono text-sm"
-                    placeholder="Enter your custom system prompt for question generation..."
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={handleSavePrompts}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Prompt
-                  </Button>
-                  <Button variant="outline" onClick={handleResetQuestionPrompt}>
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset to Default
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Answer Generation Prompt</CardTitle>
-                <CardDescription>
-                  Customize how answers are generated for evaluation questions
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="answer-prompt">System Prompt</Label>
-                  <Textarea
-                    id="answer-prompt"
-                    value={answerPrompt}
-                    onChange={(e) => setAnswerPrompt(e.target.value)}
-                    rows={10}
-                    className="font-mono text-sm"
-                    placeholder="Enter your custom system prompt for answer generation..."
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={handleSavePrompts}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Prompt
-                  </Button>
-                  <Button variant="outline" onClick={handleResetAnswerPrompt}>
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset to Default
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <PromptManager
+              type="question"
+              title="Question Generation Prompts"
+              description="Manage prompts for generating questions from your playbook content"
+            />
+            
+            <PromptManager
+              type="answer"
+              title="Answer Generation Prompts"
+              description="Manage prompts for generating answers to evaluation questions"
+            />
           </TabsContent>
 
           <TabsContent value="llm" className="space-y-6">
