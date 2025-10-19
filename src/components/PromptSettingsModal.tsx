@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -193,11 +199,12 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
-        <DialogHeader className="px-6 pt-6 pb-4">
-          <DialogTitle className="text-2xl">System Prompts Configuration</DialogTitle>
-        </DialogHeader>
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="w-full sm:w-[600px] lg:w-[800px] p-0 gap-0 overflow-hidden flex flex-col">
+          <SheetHeader className="px-6 pt-6 pb-4 border-b">
+            <SheetTitle className="text-2xl">System Prompts Configuration</SheetTitle>
+          </SheetHeader>
 
         <Tabs defaultValue="question" className="flex-1 flex flex-col overflow-hidden px-6">
           <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -373,9 +380,10 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
             Save Active Prompts
           </Button>
         </div>
-      </DialogContent>
+      </SheetContent>
+    </Sheet>
 
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+    <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New {createPromptType === "question" ? "Question" : "Answer"} Prompt</DialogTitle>
@@ -407,6 +415,6 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
           </div>
         </DialogContent>
       </Dialog>
-    </Dialog>
+    </>
   );
 };
