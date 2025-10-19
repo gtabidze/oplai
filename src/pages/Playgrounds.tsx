@@ -551,9 +551,20 @@ const Playgrounds = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {question.feedback?.score !== undefined
-                        ? `${question.feedback.score}%`
-                        : "-"}
+                      {question.feedback?.score !== undefined ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <Progress 
+                            value={question.feedback.score} 
+                            className="w-16 h-2"
+                            indicatorClassName={question.feedback.score >= 60 ? "bg-green-600" : "bg-red-600"}
+                          />
+                          <span className="text-sm font-medium min-w-[3ch]">
+                            {question.feedback.score}%
+                          </span>
+                        </div>
+                      ) : (
+                        "-"
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
