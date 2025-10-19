@@ -266,7 +266,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
             <TabsTrigger value="answer">Answer Generation</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="question" className="flex-1 flex flex-col gap-4 overflow-hidden mt-0 data-[state=active]:flex">
+          <TabsContent value="question" className="hidden flex-1 flex-col gap-4 overflow-hidden mt-0 data-[state=active]:flex">
             {questionPrompts.length > 0 ? (
               <>
                 <div className="space-y-2">
@@ -349,7 +349,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
             )}
           </TabsContent>
 
-          <TabsContent value="answer" className="flex-1 flex flex-col gap-4 overflow-hidden mt-0 data-[state=active]:flex">
+          <TabsContent value="answer" className="hidden flex-1 flex-col gap-4 overflow-hidden mt-0 data-[state=active]:flex">
             {answerPrompts.length > 0 ? (
               <>
                 <div className="space-y-2">
