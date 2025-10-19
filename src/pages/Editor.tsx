@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useLocalStorage } from "@/lib/localStorage";
 import { Plaibook } from "@/lib/types";
 import { ExperimentSidebar } from "@/components/ExperimentSidebar";
+import { ActiveUsers } from "@/components/ActiveUsers";
 import { ArrowLeft, Eye, Upload, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -151,15 +152,18 @@ const Editor = () => {
             />
           </div>
           
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handlePreview}>
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
-            </Button>
-            <Button variant="outline" size="sm" onClick={handlePublish}>
-              <Upload className="h-4 w-4 mr-2" />
-              Publish
-            </Button>
+          <div className="flex items-center gap-4">
+            <ActiveUsers plaibookId={id!} />
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handlePreview}>
+                <Eye className="h-4 w-4 mr-2" />
+                Preview
+              </Button>
+              <Button variant="outline" size="sm" onClick={handlePublish}>
+                <Upload className="h-4 w-4 mr-2" />
+                Publish
+              </Button>
+            </div>
           </div>
         </div>
       </header>

@@ -2,10 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { Auth } from "@/components/Auth";
+import { useAuth } from "@/hooks/useAuth";
 import Home from "./pages/Home";
 import Editor from "./pages/Editor";
 import Playbooks from "./pages/Playbooks";
@@ -16,6 +18,24 @@ import Published from "./pages/Published";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Auth />;
+  }
+
+  return <>{children}</>;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -28,30 +48,32 @@ const App = () => (
             {/* Public route without sidebar */}
             <Route path="/published/:id" element={<Published />} />
             
-            {/* Routes with sidebar */}
+            {/* Routes with sidebar - protected */}
             <Route
               path="/*"
               element={
-                <SidebarProvider>
-                  <div className="flex min-h-screen w-full">
-                    <AppSidebar />
-                    <div className="flex-1 flex flex-col">
-                      <header className="h-12 flex items-center border-b border-border px-4">
-                        <SidebarTrigger />
-                      </header>
-                      <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/doc/:id" element={<Editor />} />
-                        <Route path="/playbooks" element={<Playbooks />} />
-                        <Route path="/playgrounds" element={<Playgrounds />} />
-                        <Route path="/configuration" element={<Configuration />} />
-                        <Route path="/monitor" element={<Monitor />} />
-                        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
+                <ProtectedRoute>
+                  <SidebarProvider>
+                    <div className="flex min-h-screen w-full">
+                      <AppSidebar />
+                      <div className="flex-1 flex flex-col">
+                        <header className="h-12 flex items-center border-b border-border px-4">
+                          <SidebarTrigger />
+                        </header>
+                        <Routes>
+                          <Route path="/" element={<Home />} />
+                          <Route path="/doc/:id" element={<Editor />} />
+                          <Route path="/playbooks" element={<Playbooks />} />
+                          <Route path="/playgrounds" element={<Playgrounds />} />
+                          <Route path="/configuration" element={<Configuration />} />
+                          <Route path="/monitor" element={<Monitor />} />
+                          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </div>
                     </div>
-                  </div>
-                </SidebarProvider>
+                  </SidebarProvider>
+                </ProtectedRoute>
               }
             />
           </Routes>
