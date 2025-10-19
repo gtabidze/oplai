@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { ThumbsUp, ThumbsDown, Loader2, Sparkles, Plus, Trash2, RotateCw, Settings, FileText, X } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Loader2, Sparkles, Plus, Trash2, RotateCw, Settings, FileText, X, Edit2, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SavedQuestion, Plaibook } from "@/lib/types";
@@ -28,6 +29,10 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions, onUpdateDocumen
   const [regeneratingQuestionId, setRegeneratingQuestionId] = useState<string | null>(null);
   const [showDocSelector, setShowDocSelector] = useState(false);
   const [selectedDocs, setSelectedDocs] = useState<any[]>([]);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
+  const [editedQuestionText, setEditedQuestionText] = useState("");
+  const [editedAnswerText, setEditedAnswerText] = useState("");
 
   useEffect(() => {
     if (plaibook?.questions) {
@@ -212,6 +217,52 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions, onUpdateDocumen
     }
   };
 
+  const handleEditQuestion = (questionId: string, currentText: string) => {
+    setEditingQuestionId(questionId);
+    setEditedQuestionText(currentText);
+  };
+
+  const handleSaveQuestion = (questionId: string) => {
+    if (!editedQuestionText.trim()) return;
+
+    const updatedQuestions = questions.map((q) =>
+      q.id === questionId ? { ...q, question: editedQuestionText.trim() } : q
+    );
+    setQuestions(updatedQuestions);
+    onUpdateQuestions(updatedQuestions);
+    setEditingQuestionId(null);
+    setEditedQuestionText("");
+    toast.success("Question updated!");
+  };
+
+  const handleCancelEditQuestion = () => {
+    setEditingQuestionId(null);
+    setEditedQuestionText("");
+  };
+
+  const handleEditAnswer = (questionId: string, currentText: string) => {
+    setEditingAnswerId(questionId);
+    setEditedAnswerText(currentText);
+  };
+
+  const handleSaveAnswer = (questionId: string) => {
+    if (!editedAnswerText.trim()) return;
+
+    const updatedQuestions = questions.map((q) =>
+      q.id === questionId ? { ...q, answer: editedAnswerText.trim() } : q
+    );
+    setQuestions(updatedQuestions);
+    onUpdateQuestions(updatedQuestions);
+    setEditingAnswerId(null);
+    setEditedAnswerText("");
+    toast.success("Answer updated!");
+  };
+
+  const handleCancelEditAnswer = () => {
+    setEditingAnswerId(null);
+    setEditedAnswerText("");
+  };
+
   const handleSelectDocuments = (docIds: string[]) => {
     onUpdateDocuments(docIds);
     loadSelectedDocuments(docIds);
@@ -317,30 +368,68 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions, onUpdateDocumen
         {questions.map((q) => (
           <Card key={q.id} className="border-border/50">
             <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-2">
-                <CardTitle className="text-sm font-medium flex-1">{q.question}</CardTitle>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 -mt-1"
-                    onClick={() => handleRegenerateQuestion(q.id)}
-                    disabled={regeneratingQuestionId === q.id}
-                    title="Regenerate question"
-                  >
-                    <RotateCw className={`h-3 w-3 ${regeneratingQuestionId === q.id ? 'animate-spin' : ''}`} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 -mt-1"
-                    onClick={() => handleDeleteQuestion(q.id)}
-                    title="Delete question"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+              {editingQuestionId === q.id ? (
+                <div className="space-y-2">
+                  <Input
+                    value={editedQuestionText}
+                    onChange={(e) => setEditedQuestionText(e.target.value)}
+                    className="text-sm"
+                    autoFocus
+                  />
+                  <div className="flex gap-1 justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCancelEditQuestion}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleSaveQuestion(q.id)}
+                      disabled={!editedQuestionText.trim()}
+                    >
+                      <Save className="h-3 w-3 mr-1" />
+                      Save
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-sm font-medium flex-1">{q.question}</CardTitle>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 -mt-1"
+                      onClick={() => handleEditQuestion(q.id, q.question)}
+                      title="Edit question"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 -mt-1"
+                      onClick={() => handleRegenerateQuestion(q.id)}
+                      disabled={regeneratingQuestionId === q.id}
+                      title="Regenerate question"
+                    >
+                      <RotateCw className={`h-3 w-3 ${regeneratingQuestionId === q.id ? 'animate-spin' : ''}`} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 -mt-1"
+                      onClick={() => handleDeleteQuestion(q.id)}
+                      title="Delete question"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="space-y-3">
               {!q.answer ? (
@@ -364,29 +453,69 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions, onUpdateDocumen
                 </Button>
               ) : (
                 <>
-                  <div className="p-3 bg-muted/50 rounded-md">
-                    <p className="text-sm whitespace-pre-wrap">{q.answer}</p>
-                  </div>
+                  {editingAnswerId === q.id ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={editedAnswerText}
+                        onChange={(e) => setEditedAnswerText(e.target.value)}
+                        className="min-h-[100px]"
+                        autoFocus
+                      />
+                      <div className="flex gap-1 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleCancelEditAnswer}
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveAnswer(q.id)}
+                          disabled={!editedAnswerText.trim()}
+                        >
+                          <Save className="h-3 w-3 mr-1" />
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="relative p-3 bg-muted/50 rounded-md group">
+                        <p className="text-sm whitespace-pre-wrap">{q.answer}</p>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleEditAnswer(q.id, q.answer || "")}
+                          title="Edit answer"
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                      </div>
 
-                  <Button
-                    onClick={() => handleGenerateAnswer(q.id, q.question)}
-                    disabled={generatingAnswerId === q.id}
-                    size="sm"
-                    variant="outline"
-                    className="w-full"
-                  >
-                    {generatingAnswerId === q.id ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Regenerating...
-                      </>
-                    ) : (
-                      <>
-                        <RotateCw className="mr-2 h-4 w-4" />
-                        Regenerate Answer
-                      </>
-                    )}
-                  </Button>
+                      <Button
+                        onClick={() => handleGenerateAnswer(q.id, q.question)}
+                        disabled={generatingAnswerId === q.id}
+                        size="sm"
+                        variant="outline"
+                        className="w-full"
+                      >
+                        {generatingAnswerId === q.id ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Regenerating...
+                          </>
+                        ) : (
+                          <>
+                            <RotateCw className="mr-2 h-4 w-4" />
+                            Regenerate Answer
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  )}
 
                   <div className="flex items-center justify-between">
                     <div className="flex gap-2">
