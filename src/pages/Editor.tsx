@@ -144,7 +144,7 @@ const Editor = () => {
   if (!currentPlaibook) return null;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen overflow-hidden bg-background flex flex-col">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10 h-[72px]">
         <div className="max-w-[1800px] mx-auto px-4 h-full flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1 min-w-0">
