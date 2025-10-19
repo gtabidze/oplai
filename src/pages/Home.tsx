@@ -3,7 +3,8 @@ import { PlaiBookCard } from "@/components/PlaiBookCard";
 import { useLocalStorage } from "@/lib/localStorage";
 import { Plaibook } from "@/lib/types";
 import { useNavigate } from "react-router-dom";
-import { Plus, BookOpen } from "lucide-react";
+import { Plus, FileText, Lightbulb } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -22,43 +23,80 @@ const Home = () => {
     navigate(`/doc/${newPlaibook.id}`);
   };
 
+  const integrationSteps = [
+    {
+      title: "Get started with GPT 4o",
+      description: "Use OpenAI models for creating AI procedures instantly",
+    },
+    {
+      title: "Use Anthropic Claude",
+      description: "Connect Claude for advanced reasoning and long context",
+    },
+    {
+      title: "Custom Integrations",
+      description: "Build your own integrations with external AI systems",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <header className="mb-12">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-accent">
-              <BookOpen className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Plaibook
-            </h1>
+    <div className="flex-1 overflow-auto">
+      <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-14 items-center gap-4 px-6">
+          <h1 className="text-lg font-semibold">Procedures</h1>
+          <div className="ml-auto flex items-center gap-2">
+            <Button onClick={handleCreateNew} size="sm">
+              <Plus className="mr-1 h-4 w-4" />
+              New Procedure
+            </Button>
           </div>
-          <p className="text-xl text-muted-foreground">
-            Create, test, and refine your AI agent knowledge bases
-          </p>
-        </header>
-
-        <div className="mb-8">
-          <Button 
-            onClick={handleCreateNew}
-            size="lg"
-            className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            Create New Plaibook
-          </Button>
         </div>
+      </header>
 
+      <main className="p-6">
         {plaibooks.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="inline-block p-6 rounded-full bg-muted/50 mb-6">
-              <BookOpen className="h-16 w-16 text-muted-foreground" />
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="text-center max-w-md space-y-6">
+              <h2 className="text-3xl font-semibold tracking-tight">
+                Create your first Procedure
+              </h2>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Procedures contain specific instructions for an AI agent to carry out tasks. Once you create a procedure, you can manage it below. 
+              </p>
+              <Button onClick={handleCreateNew} size="lg" className="mt-4">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Procedure
+              </Button>
             </div>
-            <h2 className="text-2xl font-semibold mb-3">No Plaibooks yet</h2>
-            <p className="text-muted-foreground mb-6">
-              Create your first Plaibook to start building your AI agent's knowledge base
-            </p>
+
+            <div className="w-full max-w-3xl mt-20 space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold">Connect to external systems</h3>
+                <p className="text-sm text-muted-foreground">
+                  Enhance your AI agent's capabilities by connecting to external AI models and services. 
+                  All your data stays encrypted and secure.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {integrationSteps.map((step, index) => (
+                  <Card key={index} className="border-border hover:border-primary/50 transition-colors">
+                    <CardContent className="flex items-start gap-4 p-4">
+                      <div className="mt-1">
+                        <Lightbulb className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <h4 className="text-sm font-medium">{step.title}</h4>
+                        <p className="text-sm text-muted-foreground">{step.description}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center pt-4">
+                Manage all integrations → Settings
+              </p>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -67,7 +105,7 @@ const Home = () => {
             ))}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };
