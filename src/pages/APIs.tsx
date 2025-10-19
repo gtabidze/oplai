@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Code2, Copy, Trash2, RefreshCw, ChevronDown, Pencil } from "lucide-react";
+import { Plus, Code2, Copy, Trash2, RefreshCw, ChevronDown, Pencil, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -347,6 +347,12 @@ const APIs = () => {
     const url = `${supabaseUrl}/functions/v1/api-endpoint/${id}`;
     navigator.clipboard.writeText(url);
     toast.success("API URL copied to clipboard");
+  };
+
+  const openEndpointInNewTab = (id: string) => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const url = `${supabaseUrl}/functions/v1/api-endpoint/${id}`;
+    window.open(url, '_blank');
   };
 
   const formatDate = (timestamp: number) => {
@@ -758,6 +764,14 @@ const APIs = () => {
                         <Pencil className="h-4 w-4" />
                       </Button>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEndpointInNewTab(endpoint.id)}
+                      title="Open in new tab"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
