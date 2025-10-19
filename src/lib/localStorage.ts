@@ -1,4 +1,15 @@
 import { useEffect, useState } from 'react';
+import { Plaibook } from './types';
+
+export function getAllPlaibooks(): Plaibook[] {
+  try {
+    const keys = Object.keys(localStorage).filter(key => key.startsWith('plaibook-'));
+    return keys.map(key => JSON.parse(localStorage.getItem(key) || '{}'));
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+}
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(() => {
