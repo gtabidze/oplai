@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { PromptManager } from "@/components/PromptManager";
 
@@ -43,8 +42,6 @@ const Configuration = () => {
   const [questionPrompt, setQuestionPrompt] = useState("");
   const [answerPrompt, setAnswerPrompt] = useState("");
   const [questionCount, setQuestionCount] = useState("5");
-  const [autoSave, setAutoSave] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
   const [llmProvider, setLlmProvider] = useState("lovable");
   const [openaiKey, setOpenaiKey] = useState("");
   const [anthropicKey, setAnthropicKey] = useState("");
@@ -55,15 +52,11 @@ const Configuration = () => {
     const savedQuestionPrompt = localStorage.getItem("questionSystemPrompt");
     const savedAnswerPrompt = localStorage.getItem("answerSystemPrompt");
     const savedQuestionCount = localStorage.getItem("questionCount");
-    const savedAutoSave = localStorage.getItem("autoSave");
-    const savedDarkMode = localStorage.getItem("darkMode");
     const savedLlmProvider = localStorage.getItem("llmProvider");
 
     setQuestionPrompt(savedQuestionPrompt || DEFAULT_QUESTION_PROMPT);
     setAnswerPrompt(savedAnswerPrompt || DEFAULT_ANSWER_PROMPT);
     setQuestionCount(savedQuestionCount || "5");
-    setAutoSave(savedAutoSave !== "false");
-    setDarkMode(savedDarkMode !== "false");
     setLlmProvider(savedLlmProvider || "lovable");
   }, []);
 
@@ -94,8 +87,6 @@ const Configuration = () => {
 
   const handleSaveGeneral = () => {
     localStorage.setItem("questionCount", questionCount);
-    localStorage.setItem("autoSave", autoSave.toString());
-    localStorage.setItem("darkMode", darkMode.toString());
     localStorage.setItem("llmProvider", llmProvider);
     toast({
       title: "Settings saved",
@@ -331,34 +322,6 @@ const Configuration = () => {
                   <p className="text-sm text-muted-foreground">
                     Number of questions to generate by default
                   </p>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="auto-save">Auto-save</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically save changes as you type
-                    </p>
-                  </div>
-                  <Switch
-                    id="auto-save"
-                    checked={autoSave}
-                    onCheckedChange={setAutoSave}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="dark-mode">Dark Mode</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Use dark theme throughout the application
-                    </p>
-                  </div>
-                  <Switch
-                    id="dark-mode"
-                    checked={darkMode}
-                    onCheckedChange={setDarkMode}
-                  />
                 </div>
 
                 <Button onClick={handleSaveGeneral}>
