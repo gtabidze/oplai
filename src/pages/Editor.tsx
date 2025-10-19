@@ -130,7 +130,7 @@ const Editor = () => {
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="text-4xl font-bold border-none focus-visible:ring-0 px-0 mb-6 bg-transparent"
+              className="text-2xl font-bold border-none focus-visible:ring-0 px-0 mb-6 bg-transparent"
               placeholder="Untitled Plaibook"
             />
             
