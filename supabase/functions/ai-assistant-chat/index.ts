@@ -36,17 +36,49 @@ serve(async (req) => {
 
     console.log('Fetching user context for AI assistant...');
 
-    // Fetch all playbooks
-    const { data: playbooks, error: playbooksError } = await supabase
+    // Fetch playbooks owned by user
+    const { data: ownedPlaybooks, error: ownedError } = await supabase
       .from('playbooks')
       .select('id, title, content, created_at, updated_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .eq('user_id', user.id);
 
-    if (playbooksError) {
-      console.error('Error fetching playbooks:', playbooksError);
-      throw playbooksError;
+    if (ownedError) {
+      console.error('Error fetching owned playbooks:', ownedError);
+      throw ownedError;
     }
+
+    // Fetch playbooks where user is a collaborator
+    const { data: collaboratorPlaybooks, error: collabError } = await supabase
+      .from('playbook_collaborators')
+      .select(`
+        playbooks (
+          id,
+          title,
+          content,
+          created_at,
+          updated_at
+        )
+      `)
+      .eq('user_id', user.id);
+
+    if (collabError) {
+      console.error('Error fetching collaborator playbooks:', collabError);
+      throw collabError;
+    }
+
+    // Combine and deduplicate playbooks
+    const collabPlaybooksData = collaboratorPlaybooks?.map((c: any) => c.playbooks).filter(Boolean) || [];
+    const allPlaybooksMap = new Map();
+    
+    [...(ownedPlaybooks || []), ...collabPlaybooksData].forEach(pb => {
+      if (pb && pb.id) {
+        allPlaybooksMap.set(pb.id, pb);
+      }
+    });
+    
+    const playbooks = Array.from(allPlaybooksMap.values()).sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
 
     // Fetch all questions with their answers
     const { data: questions, error: questionsError } = await supabase
@@ -224,8 +256,9 @@ You can help with:
     );
   } catch (error) {
     console.error('Error in ai-assistant-chat:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
