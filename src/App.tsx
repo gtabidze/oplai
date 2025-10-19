@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import Editor from "./pages/Editor";
 import Playbooks from "./pages/Playbooks";
 import Playgrounds from "./pages/Playgrounds";
+import Experiments from "./pages/Experiments";
 import Monitor from "./pages/Monitor";
 import NotFound from "./pages/NotFound";
 
@@ -34,6 +35,7 @@ const App = () => (
                   <Route path="/doc/:id" element={<Editor />} />
                   <Route path="/playbooks" element={<Playbooks />} />
                   <Route path="/playgrounds" element={<Playgrounds />} />
+                  <Route path="/experiments" element={<Experiments />} />
                   <Route path="/monitor" element={<Monitor />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
