@@ -145,16 +145,35 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
 
   const handleSave = async () => {
     if (selectedQuestionPrompt && selectedAnswerPrompt) {
-      // Save to localStorage for backward compatibility
-      localStorage.setItem('questionSystemPrompt', questionContent);
-      localStorage.setItem('answerSystemPrompt', answerContent);
-      
-      // Set as active prompts in database
-      await supabase.from("prompts").update({ is_active: true }).eq("id", selectedQuestionPrompt.id);
-      await supabase.from("prompts").update({ is_active: true }).eq("id", selectedAnswerPrompt.id);
-      
-      toast.success("System prompts saved successfully!");
-      onOpenChange(false);
+      try {
+        // Save to localStorage for backward compatibility
+        localStorage.setItem('questionSystemPrompt', questionContent);
+        localStorage.setItem('answerSystemPrompt', answerContent);
+        
+        // Set as active prompts in database
+        const { error: questionError } = await supabase
+          .from("prompts")
+          .update({ is_active: true })
+          .eq("id", selectedQuestionPrompt.id);
+
+        if (questionError) throw questionError;
+
+        const { error: answerError } = await supabase
+          .from("prompts")
+          .update({ is_active: true })
+          .eq("id", selectedAnswerPrompt.id);
+
+        if (answerError) throw answerError;
+        
+        toast.success("System prompts activated successfully!");
+        
+        // Reload prompts to update the UI with new active states
+        await loadPrompts();
+        
+        onOpenChange(false);
+      } catch (error: any) {
+        toast.error(error.message || "Failed to save prompts");
+      }
     }
   };
 
