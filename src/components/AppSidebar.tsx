@@ -63,7 +63,7 @@ export function AppSidebar() {
   return <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-border h-[72px] pl-2 pt-4 cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/")}>
         {open ? <div className="flex flex-col items-start gap-0">
-            <span className="font-inter font-black text-3xl tracking-wider">OplAI</span>
+            <span className="font-inter font-normal text-3xl tracking-wider">OplAI</span>
             
           </div> : <span className="font-orbitron font-black text-xl">O</span>}
       </SidebarHeader>
