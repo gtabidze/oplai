@@ -1,4 +1,4 @@
-import { FileText, Folder, Settings, User } from "lucide-react";
+import { Home, BookOpen, Monitor, LayoutGrid, FlaskConical, Database, Settings } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -15,10 +15,13 @@ import {
 import { Logo } from "@/components/Logo";
 
 const items = [
-  { title: "Procedures", url: "/", icon: FileText },
-  { title: "Files", url: "/files", icon: Folder },
-  { title: "Settings", url: "/settings", icon: Settings },
-  { title: "Profile", url: "/profile", icon: User },
+  { title: "Home", url: "/", icon: Home },
+  { title: "Playbooks", url: "/playbooks", icon: BookOpen },
+  { title: "Monitor", url: "/monitor", icon: Monitor },
+  { title: "Playgrounds", url: "/playgrounds", icon: LayoutGrid },
+  { title: "Experiments", url: "/experiments", icon: FlaskConical },
+  { title: "Datasets", url: "/datasets", icon: Database },
+  { title: "Configuration", url: "/configuration", icon: Settings },
 ];
 
 export function AppSidebar() {

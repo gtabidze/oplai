@@ -46,11 +46,11 @@ const Home = () => {
     <div className="flex-1 overflow-auto">
       <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-14 items-center gap-4 px-6">
-          <h1 className="text-lg font-semibold">Procedures</h1>
+          <h1 className="text-lg font-semibold">Playbooks</h1>
           <div className="ml-auto flex items-center gap-2">
             <Button onClick={handleCreateNew} size="sm">
               <Plus className="mr-1 h-4 w-4" />
-              New Procedure
+              New Playbook
             </Button>
           </div>
         </div>
@@ -61,14 +61,14 @@ const Home = () => {
           <div className="flex flex-col items-center justify-center min-h-[60vh]">
             <div className="text-center max-w-md space-y-6">
               <h2 className="text-3xl font-semibold tracking-tight">
-                Create your first Procedure
+                Create your first Playbook
               </h2>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Procedures contain specific instructions for an AI agent to carry out tasks. Once you create a procedure, you can manage it below. 
+                Playbooks contain specific instructions for an AI agent to carry out tasks. Once you create a playbook, you can manage it below. 
               </p>
               <Button onClick={handleCreateNew} size="lg" className="mt-4">
                 <Plus className="mr-2 h-4 w-4" />
-                Create Procedure
+                Create Playbook
               </Button>
             </div>
 
