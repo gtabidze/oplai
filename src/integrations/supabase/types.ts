@@ -108,7 +108,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_display_info: {
+        Args: { user_ids: string[] }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
