@@ -28,9 +28,11 @@ interface Collaborator {
 interface PlaybookCollaboratorsProps {
   playbookId: string;
   ownerId: string;
+  onClose?: () => void;
+  onSend?: () => void;
 }
 
-export const PlaybookCollaborators = ({ playbookId, ownerId }: PlaybookCollaboratorsProps) => {
+export const PlaybookCollaborators = ({ playbookId, ownerId, onClose, onSend }: PlaybookCollaboratorsProps) => {
   const { user } = useAuth();
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [shareLink, setShareLink] = useState<string>("");
@@ -185,6 +187,7 @@ export const PlaybookCollaborators = ({ playbookId, ownerId }: PlaybookCollabora
     toast.success('Collaborator added');
     setEmailToAdd("");
     setSelectedRole("viewer");
+    onClose?.();
   };
 
   const removeCollaborator = async (collaboratorId: string) => {
@@ -204,109 +207,39 @@ export const PlaybookCollaborators = ({ playbookId, ownerId }: PlaybookCollabora
 
   return (
     <div className="space-y-6">
-      {isOwner && (
-        <div className="space-y-4">
-          <div className="space-y-3">
-            <Label>Email</Label>
-            <Input
-              type="email"
-              placeholder="colleague@example.com"
-              value={emailToAdd}
-              onChange={(e) => setEmailToAdd(e.target.value)}
-            />
-            
-            <Label>Role</Label>
-            <Select value={selectedRole} onValueChange={setSelectedRole}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="owner">Owner</SelectItem>
-                <SelectItem value="viewer">Viewer</SelectItem>
-                <SelectItem value="commenter">Commenter</SelectItem>
-                <SelectItem value="evaluator">Evaluator</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button onClick={addCollaboratorByEmail} className="w-full">
-              Add Collaborator
-            </Button>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or</span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Share Link</Label>
-            {shareLink ? (
-              <div className="flex gap-2">
-                <Input value={shareLink} readOnly />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={copyShareLink}
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                onClick={generateShareLink}
-                className="w-full"
-              >
-                <Share2 className="h-4 w-4 mr-2" />
-                Generate Share Link
-              </Button>
-            )}
-          </div>
+      <div className="flex gap-3">
+        <div className="flex-1">
+          <Input
+            type="email"
+            placeholder="Enter collaborator email"
+            value={emailToAdd}
+            onChange={(e) => setEmailToAdd(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                addCollaboratorByEmail();
+              }
+            }}
+          />
         </div>
-      )}
-
-      {collaborators.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium">Current Collaborators</h3>
-          <div className="space-y-2">
-            {collaborators.map((collab) => (
-              <div key={collab.id} className="flex items-center justify-between p-2 rounded-lg border">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="text-xs">
-                      {collab.profiles?.full_name?.[0] || collab.profiles?.email?.[0] || '?'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="text-sm">
-                    <div className="font-medium">
-                      {collab.profiles?.full_name || collab.profiles?.email || 'Unknown'}
-                    </div>
-                    <div className="text-xs text-muted-foreground capitalize">{collab.role}</div>
-                  </div>
-                </div>
-                {isOwner && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => removeCollaborator(collab.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
+        <div className="w-[180px]">
+          <Select value={selectedRole} onValueChange={setSelectedRole}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="owner">Owner</SelectItem>
+              <SelectItem value="viewer">Viewer</SelectItem>
+              <SelectItem value="commenter">Commenter</SelectItem>
+              <SelectItem value="evaluator">Evaluator</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      )}
+      </div>
+      <button 
+        data-send-invite 
+        onClick={addCollaboratorByEmail} 
+        className="hidden"
+      />
     </div>
   );
 };

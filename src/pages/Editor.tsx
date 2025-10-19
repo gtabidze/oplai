@@ -303,14 +303,27 @@ const Editor = () => {
 
       {/* Collaborators Dialog */}
       <Dialog open={showCollaborators} onOpenChange={setShowCollaborators}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Manage Collaborators</DialogTitle>
+            <DialogTitle>Invite Collaborators</DialogTitle>
           </DialogHeader>
           <PlaybookCollaborators 
             playbookId={currentPlaibook.id}
             ownerId={currentPlaibook.user_id}
+            onClose={() => setShowCollaborators(false)}
           />
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setShowCollaborators(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              // The Send functionality is handled inside PlaybookCollaborators
+              const sendButton = document.querySelector('[data-send-invite]') as HTMLButtonElement;
+              sendButton?.click();
+            }}>
+              Send
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
