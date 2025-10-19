@@ -8,12 +8,21 @@ import { Input } from "@/components/ui/input";
 import { Plus, FileText, MessageSquare, CheckCircle, TrendingUp, Clock, ArrowRight, Search } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Home = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [plaibooks] = useLocalStorage<Plaibook[]>("plaibooks", []);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterPlaybook, setFilterPlaybook] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [stats, setStats] = useState({
     totalPlaibooks: 0,
     totalQuestions: 0,
@@ -25,7 +34,7 @@ const Home = () => {
   useEffect(() => {
     calculateStats();
     loadRecentPlaibooks();
-  }, [plaibooks, searchQuery]);
+  }, [plaibooks, searchQuery, filterPlaybook, filterStatus]);
 
   const calculateStats = () => {
     let totalQuestions = 0;
@@ -57,24 +66,49 @@ const Home = () => {
   };
 
   const getFilteredPlaibooks = () => {
-    if (!searchQuery.trim()) {
-      return plaibooks;
+    let filtered = plaibooks;
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((plaibook) => {
+        // Search in playbook title
+        if (plaibook.title.toLowerCase().includes(query)) {
+          return true;
+        }
+        
+        // Search in questions
+        if (plaibook.questions?.some((q) => q.question.toLowerCase().includes(query))) {
+          return true;
+        }
+        
+        return false;
+      });
     }
 
-    const query = searchQuery.toLowerCase();
-    return plaibooks.filter((plaibook) => {
-      // Search in playbook title
-      if (plaibook.title.toLowerCase().includes(query)) {
+    // Apply playbook filter
+    if (filterPlaybook !== "all") {
+      filtered = filtered.filter((plaibook) => plaibook.id === filterPlaybook);
+    }
+
+    // Apply status filter
+    if (filterStatus !== "all") {
+      filtered = filtered.filter((plaibook) => {
+        const total = plaibook.questions?.length || 0;
+        const answered = plaibook.questions?.filter((q) => q.answer).length || 0;
+        
+        if (filterStatus === "answered") {
+          return total > 0 && answered === total;
+        } else if (filterStatus === "partial") {
+          return total > 0 && answered > 0 && answered < total;
+        } else if (filterStatus === "pending") {
+          return total > 0 && answered === 0;
+        }
         return true;
-      }
-      
-      // Search in questions
-      if (plaibook.questions?.some((q) => q.question.toLowerCase().includes(query))) {
-        return true;
-      }
-      
-      return false;
-    });
+      });
+    }
+
+    return filtered;
   };
 
   const handleCreateNew = () => {
@@ -111,16 +145,59 @@ const Home = () => {
   return (
     <div className="flex-1 p-8">
       <div className="max-w-7xl space-y-8">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input 
-            type="search"
-            placeholder="Search All Playbooks or Questions"
-            className="pl-10 h-12 text-base"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        {/* Search and Filters */}
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input 
+              type="search"
+              placeholder="Search All Playbooks or Questions"
+              className="pl-10 h-12 text-base"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <Select value={filterPlaybook} onValueChange={setFilterPlaybook}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="All Playbooks" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Playbooks</SelectItem>
+                {plaibooks.map((playbook) => (
+                  <SelectItem key={playbook.id} value={playbook.id}>
+                    {playbook.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="answered">Fully Answered</SelectItem>
+                <SelectItem value="partial">Partially Answered</SelectItem>
+                <SelectItem value="pending">No Answers</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {(searchQuery || filterPlaybook !== "all" || filterStatus !== "all") && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSearchQuery("");
+                  setFilterPlaybook("all");
+                  setFilterStatus("all");
+                }}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Stats Cards */}
