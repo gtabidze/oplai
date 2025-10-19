@@ -300,98 +300,26 @@ export default function Datasets() {
           </p>
         </div>
 
-        {/* Introduction Card */}
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <Cloud className="h-6 w-6 text-primary" />
+        {/* Cloud Providers Section */}
+        <div className="space-y-6">
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <Cloud className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <h2 className="text-xl font-semibold">Cloud Providers</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Connect your cloud storage providers and collaboration tools to sync your data.
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 space-y-1">
-                <h2 className="text-xl font-semibold">Connect Your Data Sources</h2>
-                <p className="text-sm text-muted-foreground">
-                  Sync your documents and data from popular cloud storage providers and collaboration tools. 
-                  Select a provider below to get started.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Synced Files Section */}
-        {syncedFiles.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold">Synced Files</h3>
-                <Badge variant="secondary" className="text-xs">
-                  {syncedFiles.length}
-                </Badge>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-3">
-              {syncedFiles.map((file) => (
-                <Card key={file.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                        <File className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate">{file.file_name}</h4>
-                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(file.synced_at).toLocaleDateString()}
-                          </span>
-                          {file.file_type && (
-                            <Badge variant="outline" className="text-xs">
-                              {file.file_type}
-                            </Badge>
-                          )}
-                          {file.file_size && (
-                            <span>{(file.file_size / 1024).toFixed(1)} KB</span>
-                          )}
-                        </div>
-                        {file.file_path && (
-                          <p className="text-xs text-muted-foreground mt-1 truncate">
-                            {file.file_path}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewFile(file);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteFile(file.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Storage Providers by Category */}
-        {Object.entries(groupedProviders).map(([category, providers]) => (
+          {/* Storage Providers by Category */}
+          {Object.entries(groupedProviders).map(([category, providers]) => (
           <div key={category} className="space-y-4">
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-semibold">{category}</h3>
@@ -461,6 +389,99 @@ export default function Datasets() {
             </div>
           </div>
         ))}
+        </div>
+
+        {/* Synced Files Section */}
+        <div className="space-y-6">
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <File className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-semibold">Synced Files</h2>
+                    <Badge variant="secondary" className="text-xs">
+                      {syncedFiles.length}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    View and manage your synced documents from connected providers.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {syncedFiles.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3">
+              {syncedFiles.map((file) => (
+                <Card key={file.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                        <File className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium truncate">{file.file_name}</h4>
+                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(file.synced_at).toLocaleDateString()}
+                          </span>
+                          {file.file_type && (
+                            <Badge variant="outline" className="text-xs">
+                              {file.file_type}
+                            </Badge>
+                          )}
+                          {file.file_size && (
+                            <span>{(file.file_size / 1024).toFixed(1)} KB</span>
+                          )}
+                        </div>
+                        {file.file_path && (
+                          <p className="text-xs text-muted-foreground mt-1 truncate">
+                            {file.file_path}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewFile(file);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteFile(file.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">
+                  No files synced yet. Connect a provider and sync your files to see them here.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
 
       {/* File Content Dialog */}
