@@ -10,7 +10,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Cloud, CheckCircle, Loader2, RefreshCw, File, Calendar, Trash2, Eye, Download } from "lucide-react";
+import {
+  Cloud,
+  CheckCircle,
+  Loader2,
+  RefreshCw,
+  FileText,
+  File,
+  Calendar,
+  Eye,
+  Trash2,
+  ExternalLink,
+  Download
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -259,29 +271,25 @@ export default function Datasets() {
 
   const handleDownloadFile = (file: any) => {
     try {
-      let blob: Blob;
-      let fileName = file.file_name || 'download';
-
       if (file.content) {
-        // For text-based files with content
-        blob = new Blob([file.content], { type: file.file_type || 'text/plain' });
+        // For text-based files with content - download directly
+        const blob = new Blob([file.content], { type: file.file_type || 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.file_name || 'download';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        toast.success('File downloaded successfully');
+      } else if (file.metadata?.webViewLink) {
+        // For files without content (like PDFs) - open Google Drive link
+        window.open(file.metadata.webViewLink, '_blank');
+        toast.success('Opening file in Google Drive');
       } else {
-        // For files without content (like PDFs), create a placeholder or show message
         toast.error('File content not available for download');
-        return;
       }
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      toast.success('File downloaded successfully');
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download file');
@@ -574,9 +582,9 @@ export default function Datasets() {
                 <div>
                   <p className="text-sm font-medium mb-2">PDF Preview Not Available</p>
                   <p className="text-sm text-muted-foreground mb-4">
-                    PDF files cannot be previewed inline. The file has been synced to your inventory.
+                    PDF files are stored in Google Drive. Click below to view or download.
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center mb-4">
                     <span>Type: PDF Document</span>
                     {selectedFile?.file_size && (
                       <>
@@ -585,6 +593,15 @@ export default function Datasets() {
                       </>
                     )}
                   </div>
+                  {selectedFile?.metadata?.webViewLink && (
+                    <Button
+                      onClick={() => window.open(selectedFile.metadata.webViewLink, '_blank')}
+                      className="mt-2"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Open in Google Drive
+                    </Button>
+                  )}
                 </div>
               </div>
             ) : selectedFile?.content ? (
@@ -592,7 +609,18 @@ export default function Datasets() {
                 {selectedFile.content}
               </pre>
             ) : (
-              <p className="text-sm text-muted-foreground">No content available for this file.</p>
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground mb-4">No content available for this file.</p>
+                {selectedFile?.metadata?.webViewLink && (
+                  <Button
+                    onClick={() => window.open(selectedFile.metadata.webViewLink, '_blank')}
+                    variant="outline"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View in Google Drive
+                  </Button>
+                )}
+              </div>
             )}
           </div>
           <div className="flex justify-end gap-2 pt-4">
