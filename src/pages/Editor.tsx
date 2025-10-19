@@ -17,6 +17,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 
 const Editor = () => {
   const { id } = useParams();
@@ -180,26 +185,32 @@ const Editor = () => {
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-6 py-8">
-            <EditorContent editor={editor} className="text-lg" />
+      <ResizablePanelGroup direction="horizontal" className="flex-1 overflow-hidden">
+        <ResizablePanel defaultSize={65} minSize={30}>
+          <div className="h-full overflow-y-auto">
+            <div className="max-w-4xl mx-auto px-6 py-8">
+              <EditorContent editor={editor} className="text-lg" />
+            </div>
           </div>
-        </div>
+        </ResizablePanel>
 
-        <div className="w-96 border-l border-border bg-card/30 backdrop-blur-sm flex flex-col">
-          <div className="p-6 flex-1 flex flex-col overflow-y-auto">
-            <ExperimentSidebar
-              plaibook={{
-                ...currentPlaibook,
-                content: editorContent || currentPlaibook.content
-              }}
-              onUpdateQuestions={handleUpdateQuestions}
-              onUpdateDocuments={handleUpdateDocuments}
-            />
+        <ResizableHandle withHandle />
+
+        <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
+          <div className="h-full border-l border-border bg-card/30 backdrop-blur-sm flex flex-col">
+            <div className="p-6 flex-1 flex flex-col overflow-y-auto">
+              <ExperimentSidebar
+                plaibook={{
+                  ...currentPlaibook,
+                  content: editorContent || currentPlaibook.content
+                }}
+                onUpdateQuestions={handleUpdateQuestions}
+                onUpdateDocuments={handleUpdateDocuments}
+              />
+            </div>
           </div>
-        </div>
-      </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
 
       {/* Preview Dialog */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
