@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Code2, Copy, Trash2, RefreshCw, ChevronDown, Pencil } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -45,31 +46,93 @@ interface APIEndpoint {
 
 const APIs = () => {
   const [plaibooks] = useLocalStorage<Plaibook[]>("plaibooks", []);
-  
-  // Initialize with Golden Datasets API
-  const [endpoints, setEndpoints] = useState<APIEndpoint[]>(() => {
-    const goldenDatasetAPI: APIEndpoint = {
-      id: "golden-datasets-api",
-      name: "Golden Datasets API",
-      isActive: true,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      selectedPlaybooks: [], // Will show all playbooks
-      dataPoints: {
-        playbookContent: true,
-        questions: true,
-        answers: true,
-        scores: true,
-        createdDate: true,
-        updatedDate: true,
-      },
-    };
-    return [goldenDatasetAPI];
-  });
+  const [endpoints, setEndpoints] = useState<APIEndpoint[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingEndpoint, setEditingEndpoint] = useState<APIEndpoint | null>(null);
+
+  // Load endpoints from database
+  useEffect(() => {
+    loadEndpoints();
+  }, []);
+
+  const loadEndpoints = async () => {
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('api_endpoints')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading endpoints:', error);
+        toast.error('Failed to load API endpoints');
+        return;
+      }
+
+      // Transform database records to component state format
+      const transformedEndpoints = data.map((endpoint) => ({
+        id: endpoint.id,
+        name: endpoint.name,
+        isActive: endpoint.is_active,
+        createdAt: new Date(endpoint.created_at).getTime(),
+        updatedAt: new Date(endpoint.updated_at).getTime(),
+        selectedPlaybooks: endpoint.selected_playbooks as string[],
+        dataPoints: endpoint.data_points as APIEndpoint['dataPoints'],
+      }));
+
+      // Check if Golden Datasets API exists
+      const hasGoldenDataset = transformedEndpoints.some(e => e.id === 'golden-datasets-api');
+      
+      if (!hasGoldenDataset) {
+        // Create Golden Datasets API if it doesn't exist
+        const { data: goldenDataset, error: createError } = await supabase
+          .from('api_endpoints')
+          .insert({
+            id: 'golden-datasets-api',
+            user_id: user.id,
+            name: 'Golden Datasets API',
+            is_active: true,
+            selected_playbooks: [],
+            data_points: {
+              playbookContent: true,
+              questions: true,
+              answers: true,
+              scores: true,
+              createdDate: true,
+              updatedDate: true,
+            },
+          })
+          .select()
+          .single();
+
+        if (!createError && goldenDataset) {
+          transformedEndpoints.unshift({
+            id: goldenDataset.id,
+            name: goldenDataset.name,
+            isActive: goldenDataset.is_active,
+            createdAt: new Date(goldenDataset.created_at).getTime(),
+            updatedAt: new Date(goldenDataset.updated_at).getTime(),
+            selectedPlaybooks: goldenDataset.selected_playbooks as string[],
+            dataPoints: goldenDataset.data_points as APIEndpoint['dataPoints'],
+          });
+        }
+      }
+
+      setEndpoints(transformedEndpoints);
+    } catch (error) {
+      console.error('Error in loadEndpoints:', error);
+      toast.error('Failed to load API endpoints');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const [newEndpoint, setNewEndpoint] = useState<Partial<APIEndpoint>>({
     name: "",
     selectedPlaybooks: [],
@@ -83,7 +146,7 @@ const APIs = () => {
     },
   });
 
-  const handleCreateEndpoint = () => {
+  const handleCreateEndpoint = async () => {
     if (!newEndpoint.name?.trim()) {
       toast.error("Please enter an API name");
       return;
@@ -94,31 +157,61 @@ const APIs = () => {
       return;
     }
 
-    const endpoint: APIEndpoint = {
-      id: crypto.randomUUID(),
-      name: newEndpoint.name,
-      isActive: false,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      selectedPlaybooks: newEndpoint.selectedPlaybooks!,
-      dataPoints: newEndpoint.dataPoints!,
-    };
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in to create an API endpoint");
+        return;
+      }
 
-    setEndpoints([...endpoints, endpoint]);
-    setIsDialogOpen(false);
-    setNewEndpoint({
-      name: "",
-      selectedPlaybooks: [],
-      dataPoints: {
-        playbookContent: true,
-        questions: true,
-        answers: true,
-        scores: true,
-        createdDate: false,
-        updatedDate: false,
-      },
-    });
-    toast.success("API endpoint created successfully");
+      const { data, error } = await supabase
+        .from('api_endpoints')
+        .insert({
+          user_id: user.id,
+          name: newEndpoint.name,
+          is_active: false,
+          selected_playbooks: newEndpoint.selectedPlaybooks,
+          data_points: newEndpoint.dataPoints,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating endpoint:', error);
+        toast.error('Failed to create API endpoint');
+        return;
+      }
+
+      // Add to local state
+      const endpoint: APIEndpoint = {
+        id: data.id,
+        name: data.name,
+        isActive: data.is_active,
+        createdAt: new Date(data.created_at).getTime(),
+        updatedAt: new Date(data.updated_at).getTime(),
+        selectedPlaybooks: data.selected_playbooks as string[],
+        dataPoints: data.data_points as APIEndpoint['dataPoints'],
+      };
+
+      setEndpoints([...endpoints, endpoint]);
+      setIsDialogOpen(false);
+      setNewEndpoint({
+        name: "",
+        selectedPlaybooks: [],
+        dataPoints: {
+          playbookContent: true,
+          questions: true,
+          answers: true,
+          scores: true,
+          createdDate: false,
+          updatedDate: false,
+        },
+      });
+      toast.success("API endpoint created successfully");
+    } catch (error) {
+      console.error('Error in handleCreateEndpoint:', error);
+      toast.error('Failed to create API endpoint');
+    }
   };
 
   const handleEditEndpoint = (endpoint: APIEndpoint) => {
@@ -126,19 +219,37 @@ const APIs = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateEndpoint = () => {
+  const handleUpdateEndpoint = async () => {
     if (!editingEndpoint) return;
 
-    setEndpoints(
-      endpoints.map((endpoint) =>
-        endpoint.id === editingEndpoint.id
-          ? { ...editingEndpoint, updatedAt: Date.now() }
-          : endpoint
-      )
-    );
-    setIsEditDialogOpen(false);
-    setEditingEndpoint(null);
-    toast.success("API endpoint updated successfully");
+    try {
+      const { error } = await supabase
+        .from('api_endpoints')
+        .update({
+          data_points: editingEndpoint.dataPoints,
+        })
+        .eq('id', editingEndpoint.id);
+
+      if (error) {
+        console.error('Error updating endpoint:', error);
+        toast.error('Failed to update API endpoint');
+        return;
+      }
+
+      setEndpoints(
+        endpoints.map((endpoint) =>
+          endpoint.id === editingEndpoint.id
+            ? { ...editingEndpoint, updatedAt: Date.now() }
+            : endpoint
+        )
+      );
+      setIsEditDialogOpen(false);
+      setEditingEndpoint(null);
+      toast.success("API endpoint updated successfully");
+    } catch (error) {
+      console.error('Error in handleUpdateEndpoint:', error);
+      toast.error('Failed to update API endpoint');
+    }
   };
 
   const togglePlaybookSelection = (playbookId: string) => {
@@ -163,35 +274,72 @@ const APIs = () => {
       .join(", ");
   };
 
-  const toggleEndpointStatus = (id: string) => {
+  const toggleEndpointStatus = async (id: string) => {
     // Prevent deactivating Golden Datasets API
     if (id === "golden-datasets-api") {
       toast.error("Golden Datasets API cannot be deactivated");
       return;
     }
-    
-    setEndpoints(
-      endpoints.map((endpoint) =>
-        endpoint.id === id
-          ? { ...endpoint, isActive: !endpoint.isActive, updatedAt: Date.now() }
-          : endpoint
-      )
-    );
+
+    const endpoint = endpoints.find(e => e.id === id);
+    if (!endpoint) return;
+
+    try {
+      const { error } = await supabase
+        .from('api_endpoints')
+        .update({ is_active: !endpoint.isActive })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error toggling endpoint:', error);
+        toast.error('Failed to update API endpoint status');
+        return;
+      }
+
+      setEndpoints(
+        endpoints.map((endpoint) =>
+          endpoint.id === id
+            ? { ...endpoint, isActive: !endpoint.isActive, updatedAt: Date.now() }
+            : endpoint
+        )
+      );
+      toast.success(`API endpoint ${!endpoint.isActive ? 'activated' : 'deactivated'}`);
+    } catch (error) {
+      console.error('Error in toggleEndpointStatus:', error);
+      toast.error('Failed to update API endpoint status');
+    }
   };
 
-  const deleteEndpoint = (id: string) => {
+  const deleteEndpoint = async (id: string) => {
     // Prevent deleting Golden Datasets API
     if (id === "golden-datasets-api") {
       toast.error("Golden Datasets API cannot be deleted");
       return;
     }
-    
-    setEndpoints(endpoints.filter((endpoint) => endpoint.id !== id));
-    toast.success("API endpoint deleted");
+
+    try {
+      const { error } = await supabase
+        .from('api_endpoints')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting endpoint:', error);
+        toast.error('Failed to delete API endpoint');
+        return;
+      }
+
+      setEndpoints(endpoints.filter((endpoint) => endpoint.id !== id));
+      toast.success("API endpoint deleted");
+    } catch (error) {
+      console.error('Error in deleteEndpoint:', error);
+      toast.error('Failed to delete API endpoint');
+    }
   };
 
   const copyEndpointURL = (id: string) => {
-    const url = `${window.location.origin}/api/v1/endpoint/${id}`;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const url = `${supabaseUrl}/functions/v1/api-endpoint/${id}`;
     navigator.clipboard.writeText(url);
     toast.success("API URL copied to clipboard");
   };
@@ -561,7 +709,14 @@ const APIs = () => {
 
         {/* API Endpoints List */}
         <div className="space-y-4">
-          {endpoints.map((endpoint) => (
+          {isLoading ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-16">
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+              </CardContent>
+            </Card>
+          ) : (
+            endpoints.map((endpoint) => (
             <Card key={endpoint.id}>
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -624,7 +779,7 @@ const APIs = () => {
                   <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                     <div className="flex-1 space-y-1">
                       <code className="text-sm font-mono break-all">
-                        {window.location.origin}/api/v1/endpoint/{endpoint.id}
+                        {import.meta.env.VITE_SUPABASE_URL}/functions/v1/api-endpoint/{endpoint.id}
                       </code>
                       <p className="text-xs text-muted-foreground">API Endpoint URL</p>
                     </div>
@@ -684,7 +839,8 @@ const APIs = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          ))
+          )}
         </div>
 
         {/* Empty State */}
