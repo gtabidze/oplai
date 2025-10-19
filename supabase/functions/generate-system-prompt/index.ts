@@ -12,14 +12,21 @@ serve(async (req) => {
   }
 
   try {
-    const { type, context } = await req.json();
+    const { type, context, promptContent } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const systemPrompt = `You are an expert in creating structured system prompts for AI assistants. 
+    let systemPrompt: string;
+    let userPrompt: string;
+
+    if (type === "title") {
+      systemPrompt = "You are a helpful assistant that generates concise, descriptive titles. Return ONLY the title text, nothing else. Maximum 5 words.";
+      userPrompt = `Generate a short, descriptive title for this ${context}:\n\n${promptContent}`;
+    } else {
+      systemPrompt = `You are an expert in creating structured system prompts for AI assistants. 
 
 CRITICAL: Return ONLY the prompt content itself, without any introductory text, explanations, or markdown code blocks. Do not include phrases like "Here's a" or "Here is" or wrap the prompt in code blocks. The output should be immediately usable as a system prompt.
 
@@ -34,13 +41,14 @@ Create a comprehensive, well-structured system prompt for ${type} generation tha
 
 Format the prompt using markdown with clear headers (# ## ###) and structure.`;
 
-    const userPrompt = context 
-      ? `Create a system prompt for ${type} generation. Context: ${context}
+      userPrompt = context 
+        ? `Create a system prompt for ${type} generation. Context: ${context}
 
 Remember: Return ONLY the prompt content, no explanations or wrappers.`
-      : `Create a professional system prompt for ${type} generation that will help generate high-quality, relevant, and accurate results.
+        : `Create a professional system prompt for ${type} generation that will help generate high-quality, relevant, and accurate results.
 
 Remember: Return ONLY the prompt content, no explanations or wrappers.`;
+    }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
