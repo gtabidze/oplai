@@ -35,11 +35,14 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
     try {
       const customPrompt = localStorage.getItem('questionSystemPrompt');
       const llmProvider = localStorage.getItem('llmProvider') || 'lovable';
+      const questionCount = localStorage.getItem('questionCount') || '5';
+      
       const { data, error } = await supabase.functions.invoke("generate-questions", {
         body: { 
           documentContent: plaibook.content,
           customSystemPrompt: customPrompt,
-          llmProvider 
+          llmProvider,
+          count: parseInt(questionCount)
         },
       });
 

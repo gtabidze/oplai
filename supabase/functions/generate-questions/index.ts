@@ -113,8 +113,9 @@ serve(async (req) => {
   }
 
   try {
-    const { documentContent, customSystemPrompt, llmProvider } = await req.json();
+    const { documentContent, customSystemPrompt, llmProvider, count } = await req.json();
     const provider = llmProvider || 'lovable';
+    const questionCount = count || 5;
 
     // Validate input sizes
     if (documentContent && documentContent.length > MAX_DOCUMENT_SIZE) {
@@ -138,7 +139,7 @@ serve(async (req) => {
       .replace(/\s+/g, ' ')       // Collapse multiple spaces
       .trim();
 
-    console.log('Generating questions for document with length:', textContent?.length, 'using provider:', provider);
+    console.log('Generating questions for document with length:', textContent?.length, 'using provider:', provider, 'count:', questionCount);
 
     if (!textContent || textContent.length < 10) {
       return new Response(
@@ -149,12 +150,12 @@ serve(async (req) => {
       );
     }
 
-    const defaultSystemPrompt = 'You are a helpful assistant that generates questions. Analyze the provided text and generate 8 questions that end users would ask about the facts, content, and subject matter presented in the text. Focus on the actual content, NOT meta-questions about the document itself. Return ONLY a JSON array of strings, nothing else.';
+    const defaultSystemPrompt = `You are a helpful assistant that generates questions. Analyze the provided text and generate ${questionCount} questions that end users would ask about the facts, content, and subject matter presented in the text. Focus on the actual content, NOT meta-questions about the document itself. Return ONLY a JSON array of strings, nothing else.`;
 
     const content = await callLLM(
       provider,
       customSystemPrompt || defaultSystemPrompt,
-      `Generate 8 questions that users would ask about the facts and content in this text:\n\n${textContent}`
+      `Generate ${questionCount} questions that users would ask about the facts and content in this text:\n\n${textContent}`
     );
 
     console.log('AI response received');
@@ -188,7 +189,7 @@ serve(async (req) => {
                  !trimmed.startsWith('```');
         })
         .map((q: string) => q.replace(/^\d+\.\s*/, '').replace(/^[-*]\s*/, '').replace(/^["']|["']$/g, '').trim())
-        .slice(0, 8);
+        .slice(0, questionCount);
     }
 
     console.log('Generated questions count:', questions.length);
