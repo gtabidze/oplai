@@ -1,4 +1,4 @@
-import { Home, BookOpen, ChartArea, Workflow, Database, Settings, LogOut, User as UserIcon } from "lucide-react";
+import { Home, BookOpen, ChartArea, Workflow, Database, Code2, Settings, LogOut, User as UserIcon } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -51,6 +51,11 @@ const items = [
     title: "Datasets",
     url: "/datasets",
     icon: Database,
+  },
+  {
+    title: "APIs",
+    url: "/apis",
+    icon: Code2,
   },
   {
     title: "Configuration",
