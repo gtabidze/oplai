@@ -94,8 +94,8 @@ export function AppSidebar() {
                       end
                       className={({ isActive }) =>
                         isActive
-                          ? "bg-accent text-accent-foreground"
-                          : "hover:bg-accent/50"
+                          ? "bg-accent text-accent-foreground justify-start"
+                          : "hover:bg-accent/50 justify-start"
                       }
                     >
                       <item.icon />
