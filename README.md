@@ -1,12 +1,9 @@
-# 📚 Oplai - Operational playbooks management platform with a AI-native document editor for building  AI agents.
+# Oplai - Operational playbooks management platform with a AI-native document editor for building  AI agents.
 
 > A modern, collaborative platform for creating AI-powered evaluation playbooks and knowledge bases.
 
-**URL**: https://oplai.lovable.app/
 
-Admin: guatabidze@gmail.com
-
-Pass: admin123
+**Try now!**: https://oplai.lovable.app/  |  Admin: guatabidze@gmail.com | Pass: admin123
 
 ---
 
