@@ -1,4 +1,4 @@
-# Oplai - Operational playbooks management platform with a AI-native document editor for building  AI agents.
+# Oplai, the AI-first editor where documents turn into working agents.
 
 > A modern, collaborative platform for creating AI-powered evaluation playbooks and knowledge bases.
 
