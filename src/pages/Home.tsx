@@ -4,7 +4,8 @@ import { useLocalStorage } from "@/lib/localStorage";
 import { Plaibook, SavedQuestion } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, FileText, MessageSquare, CheckCircle, TrendingUp, Clock, ArrowRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, FileText, MessageSquare, CheckCircle, TrendingUp, Clock, ArrowRight, Search } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 const Home = () => {
@@ -84,18 +85,14 @@ const Home = () => {
   return (
     <div className="flex-1 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground mt-2">
-              Overview of your evaluation workspace
-            </p>
-          </div>
-          <Button onClick={handleCreateNew} size="lg">
-            <Plus className="h-5 w-5 mr-2" />
-            New Playbook
-          </Button>
+        {/* Search */}
+        <div className="relative max-w-2xl mx-auto">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Input 
+            type="search"
+            placeholder="search all playbooks or questions"
+            className="pl-10 h-12 text-base"
+          />
         </div>
 
         {/* Stats Cards */}
