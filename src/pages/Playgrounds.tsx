@@ -55,6 +55,9 @@ const Playgrounds = () => {
   const [deleteQuestionId, setDeleteQuestionId] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string>("lovable");
   const [selectedModel, setSelectedModel] = useState<string>("google/gemini-2.5-flash");
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [compareProvider, setCompareProvider] = useState<string>("openai");
+  const [compareModel, setCompareModel] = useState<string>("gpt-4o");
 
   const providerModels: Record<string, { value: string; label: string }[]> = {
     lovable: [
@@ -162,7 +165,7 @@ const Playgrounds = () => {
     toast.success("Question updated successfully");
   };
 
-  const handleRegenerateAnswer = async () => {
+  const handleRegenerateAnswer = async (useComparison = false) => {
     if (!selectedQuestion) return;
 
     setIsRegenerating(true);
@@ -176,40 +179,117 @@ const Playgrounds = () => {
 
       const customPrompt = localStorage.getItem("answerSystemPrompt");
 
-      const { data, error } = await supabase.functions.invoke("get-answer", {
-        body: {
-          documentContent: plaibook.content,
-          question: selectedQuestion.question,
-          customSystemPrompt: customPrompt,
-          llmProvider: selectedProvider,
+      if (useComparison) {
+        // Generate answers from both providers
+        const [result1, result2] = await Promise.all([
+          supabase.functions.invoke("get-answer", {
+            body: {
+              documentContent: plaibook.content,
+              question: selectedQuestion.question,
+              customSystemPrompt: customPrompt,
+              llmProvider: selectedProvider,
+              model: selectedModel,
+            },
+          }),
+          supabase.functions.invoke("get-answer", {
+            body: {
+              documentContent: plaibook.content,
+              question: selectedQuestion.question,
+              customSystemPrompt: customPrompt,
+              llmProvider: compareProvider,
+              model: compareModel,
+            },
+          }),
+        ]);
+
+        if (result1.error || result2.error) throw result1.error || result2.error;
+
+        const newAnswers = [
+          {
+            text: result1.data.answer,
+            provider: selectedProvider,
+            model: selectedModel,
+            timestamp: Date.now(),
+          },
+          {
+            text: result2.data.answer,
+            provider: compareProvider,
+            model: compareModel,
+            timestamp: Date.now(),
+          },
+        ];
+
+        const updatedPlaibooks = plaibooks.map((p: Plaibook) => {
+          if (p.id === selectedQuestion.plaibookId && p.questions) {
+            return {
+              ...p,
+              questions: p.questions.map((q) =>
+                q.id === selectedQuestion.id
+                  ? { ...q, answers: [...(q.answers || []), ...newAnswers] }
+                  : q
+              ),
+            };
+          }
+          return p;
+        });
+
+        updatedPlaibooks.forEach((p: Plaibook) => {
+          savePlaibook(p);
+        });
+
+        loadAllQuestions();
+        setSelectedQuestion({
+          ...selectedQuestion,
+          answers: [...(selectedQuestion.answers || []), ...newAnswers],
+        });
+        toast.success("Comparison answers generated successfully");
+      } else {
+        // Single provider regeneration
+        const { data, error } = await supabase.functions.invoke("get-answer", {
+          body: {
+            documentContent: plaibook.content,
+            question: selectedQuestion.question,
+            customSystemPrompt: customPrompt,
+            llmProvider: selectedProvider,
+            model: selectedModel,
+          },
+        });
+
+        if (error) throw error;
+
+        const newAnswer = {
+          text: data.answer,
+          provider: selectedProvider,
           model: selectedModel,
-        },
-      });
+          timestamp: Date.now(),
+        };
 
-      if (error) throw error;
+        const updatedPlaibooks = plaibooks.map((p: Plaibook) => {
+          if (p.id === selectedQuestion.plaibookId && p.questions) {
+            return {
+              ...p,
+              questions: p.questions.map((q) =>
+                q.id === selectedQuestion.id
+                  ? { ...q, answer: data.answer, answers: [...(q.answers || []), newAnswer] }
+                  : q
+              ),
+            };
+          }
+          return p;
+        });
 
-      const updatedPlaibooks = plaibooks.map((p: Plaibook) => {
-        if (p.id === selectedQuestion.plaibookId && p.questions) {
-          return {
-            ...p,
-            questions: p.questions.map((q) =>
-              q.id === selectedQuestion.id ? { ...q, answer: data.answer } : q
-            ),
-          };
-        }
-        return p;
-      });
+        updatedPlaibooks.forEach((p: Plaibook) => {
+          savePlaibook(p);
+        });
 
-      updatedPlaibooks.forEach((p: Plaibook) => {
-        savePlaibook(p);
-      });
-
-      loadAllQuestions();
-      setSelectedQuestion({
-        ...selectedQuestion,
-        answer: data.answer,
-      });
-      toast.success(`Answer regenerated with ${selectedProvider} - ${selectedModel}`);
+        loadAllQuestions();
+        setSelectedQuestion({
+          ...selectedQuestion,
+          answer: data.answer,
+          answers: [...(selectedQuestion.answers || []), newAnswer],
+        });
+        toast.success(`Answer regenerated with ${selectedProvider} - ${selectedModel}`);
+      }
     } catch (error) {
       console.error("Error regenerating answer:", error);
       toast.error("Failed to regenerate answer");
@@ -345,62 +425,146 @@ const Playgrounds = () => {
 
                 {/* LLM Provider Selection */}
                 <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
-                  <div className="space-y-2">
-                    <Label htmlFor="provider">AI Provider</Label>
-                    <Select value={selectedProvider} onValueChange={(value) => {
-                      setSelectedProvider(value);
-                      // Reset to first model of new provider
-                      setSelectedModel(providerModels[value][0].value);
-                    }}>
-                      <SelectTrigger id="provider">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="lovable">Lovable AI</SelectItem>
-                        <SelectItem value="openai">OpenAI</SelectItem>
-                        <SelectItem value="anthropic">Anthropic</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Generation Mode</Label>
+                    <Button
+                      variant={comparisonMode ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setComparisonMode(!comparisonMode)}
+                    >
+                      {comparisonMode ? "Comparison Mode" : "Single Mode"}
+                    </Button>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="model">Model</Label>
-                    <Select value={selectedModel} onValueChange={setSelectedModel}>
-                      <SelectTrigger id="model">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {providerModels[selectedProvider]?.map((model) => (
-                          <SelectItem key={model.value} value={model.value}>
-                            {model.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-4">
+                    {/* First Provider */}
+                    <div className="space-y-2">
+                      <Label htmlFor="provider" className="text-xs font-semibold">
+                        {comparisonMode ? "Provider 1" : "AI Provider"}
+                      </Label>
+                      <Select value={selectedProvider} onValueChange={(value) => {
+                        setSelectedProvider(value);
+                        setSelectedModel(providerModels[value][0].value);
+                      }}>
+                        <SelectTrigger id="provider">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="lovable">Lovable AI</SelectItem>
+                          <SelectItem value="openai">OpenAI</SelectItem>
+                          <SelectItem value="anthropic">Anthropic</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="model" className="text-xs font-semibold">Model</Label>
+                      <Select value={selectedModel} onValueChange={setSelectedModel}>
+                        <SelectTrigger id="model">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {providerModels[selectedProvider]?.map((model) => (
+                            <SelectItem key={model.value} value={model.value}>
+                              {model.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Second Provider (Comparison Mode) */}
+                    {comparisonMode && (
+                      <>
+                        <div className="border-t pt-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="compareProvider" className="text-xs font-semibold">Provider 2</Label>
+                            <Select value={compareProvider} onValueChange={(value) => {
+                              setCompareProvider(value);
+                              setCompareModel(providerModels[value][0].value);
+                            }}>
+                              <SelectTrigger id="compareProvider">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="lovable">Lovable AI</SelectItem>
+                                <SelectItem value="openai">OpenAI</SelectItem>
+                                <SelectItem value="anthropic">Anthropic</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2 mt-2">
+                            <Label htmlFor="compareModel" className="text-xs font-semibold">Model</Label>
+                            <Select value={compareModel} onValueChange={setCompareModel}>
+                              <SelectTrigger id="compareModel">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {providerModels[compareProvider]?.map((model) => (
+                                  <SelectItem key={model.value} value={model.value}>
+                                    {model.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                   
                   <p className="text-xs text-muted-foreground">
-                    Select a provider and model to regenerate the answer
+                    {comparisonMode 
+                      ? "Compare answers from two different providers side by side"
+                      : "Select a provider and model to regenerate the answer"}
                   </p>
                 </div>
 
-                {selectedQuestion.answer && (
+                {/* Generate Button */}
+                <Button
+                  onClick={() => handleRegenerateAnswer(comparisonMode)}
+                  disabled={isRegenerating}
+                  className="w-full"
+                >
+                  <RotateCw className={`h-4 w-4 mr-2 ${isRegenerating ? "animate-spin" : ""}`} />
+                  {isRegenerating ? "Generating..." : comparisonMode ? "Compare Answers" : "Regenerate Answer"}
+                </Button>
+
+                {/* Answer Display */}
+                {(selectedQuestion.answer || selectedQuestion.answers?.length) && (
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm text-muted-foreground">Answer</p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleRegenerateAnswer}
-                        disabled={isRegenerating}
-                      >
-                        <RotateCw className={`h-4 w-4 mr-1 ${isRegenerating ? "animate-spin" : ""}`} />
-                        {isRegenerating ? "Regenerating..." : "Regenerate"}
-                      </Button>
-                    </div>
-                    <div className="bg-muted/50 p-4 rounded-lg">
-                      <p className="text-sm leading-relaxed">{selectedQuestion.answer}</p>
-                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">Generated Answers</p>
+                    
+                    {/* Show comparison view if we have multiple answers */}
+                    {selectedQuestion.answers && selectedQuestion.answers.length >= 2 ? (
+                      <div className="space-y-4">
+                        {selectedQuestion.answers.slice(-2).map((ans, idx) => (
+                          <div key={idx} className="bg-muted/50 p-4 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs font-semibold text-primary">
+                                {ans.provider === "lovable" ? "Lovable AI" : ans.provider === "openai" ? "OpenAI" : "Anthropic"} - {ans.model}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(ans.timestamp).toLocaleTimeString()}
+                              </p>
+                            </div>
+                            <p className="text-sm leading-relaxed">{ans.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-muted/50 p-4 rounded-lg">
+                        <p className="text-sm leading-relaxed">
+                          {selectedQuestion.answers?.[selectedQuestion.answers.length - 1]?.text || selectedQuestion.answer}
+                        </p>
+                        {selectedQuestion.answers?.[selectedQuestion.answers.length - 1] && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {selectedQuestion.answers[selectedQuestion.answers.length - 1].provider} - {selectedQuestion.answers[selectedQuestion.answers.length - 1].model}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 

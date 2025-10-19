@@ -7,10 +7,18 @@ export interface Plaibook {
   questions?: SavedQuestion[];
 }
 
+export interface GeneratedAnswer {
+  text: string;
+  provider: string;
+  model: string;
+  timestamp: number;
+}
+
 export interface SavedQuestion {
   id: string;
   question: string;
-  answer?: string;
+  answer?: string; // Legacy field for backward compatibility
+  answers?: GeneratedAnswer[]; // New field for multiple answers
   feedback?: Feedback;
 }
 
