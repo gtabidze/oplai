@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      data_sources: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          last_synced_at: string | null
+          metadata: Json | null
+          provider: string
+          provider_user_email: string | null
+          provider_user_id: string | null
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_synced_at?: string | null
+          metadata?: Json | null
+          provider: string
+          provider_user_email?: string | null
+          provider_user_id?: string | null
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_synced_at?: string | null
+          metadata?: Json | null
+          provider?: string
+          provider_user_email?: string | null
+          provider_user_id?: string | null
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -102,6 +150,62 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      synced_files: {
+        Row: {
+          content: string | null
+          created_at: string
+          data_source_id: string
+          file_name: string
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          metadata: Json | null
+          provider_file_id: string
+          synced_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          data_source_id: string
+          file_name: string
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          metadata?: Json | null
+          provider_file_id: string
+          synced_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          data_source_id?: string
+          file_name?: string
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          metadata?: Json | null
+          provider_file_id?: string
+          synced_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "synced_files_data_source_id_fkey"
+            columns: ["data_source_id"]
+            isOneToOne: false
+            referencedRelation: "data_sources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
