@@ -30,7 +30,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-border p-4 h-[72px]">
+      <SidebarHeader className="border-b border-border h-[72px] flex items-center px-4">
         <div className="flex items-center gap-2">
           <Logo className="h-8 w-8 text-foreground" />
           {open && <span className="font-semibold text-lg">Oplai</span>}
