@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Cloud, CheckCircle, Loader2, RefreshCw, File, Calendar, Trash2, Eye } from "lucide-react";
+import { Cloud, CheckCircle, Loader2, RefreshCw, File, Calendar, Trash2, Eye, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -257,6 +257,37 @@ export default function Datasets() {
     setIsFileDialogOpen(true);
   };
 
+  const handleDownloadFile = (file: any) => {
+    try {
+      let blob: Blob;
+      let fileName = file.file_name || 'download';
+
+      if (file.content) {
+        // For text-based files with content
+        blob = new Blob([file.content], { type: file.file_type || 'text/plain' });
+      } else {
+        // For files without content (like PDFs), create a placeholder or show message
+        toast.error('File content not available for download');
+        return;
+      }
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success('File downloaded successfully');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download file');
+    }
+  };
+
   const handleProviderClick = async (provider: StorageProvider) => {
     if (provider.id === 'google-drive') {
       if (connectedProviders.has(provider.id)) {
@@ -471,6 +502,16 @@ export default function Datasets() {
                           }}
                         >
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadFile(file);
+                          }}
+                        >
+                          <Download className="h-4 w-4" />
                         </Button>
                         <Button
                           size="sm"
