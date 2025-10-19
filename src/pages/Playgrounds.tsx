@@ -353,7 +353,7 @@ const Playgrounds = () => {
       </div>
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent className="w-[50vw] overflow-y-auto">
+        <SheetContent className="w-[50vw] max-w-[50vw] overflow-y-auto">
           {selectedQuestion && (
             <>
               <SheetHeader>
