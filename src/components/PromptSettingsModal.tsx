@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { History, Save, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -150,151 +149,172 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[90vw] max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Evaluation System Prompts</DialogTitle>
+          <DialogTitle className="text-2xl">System Prompts Configuration</DialogTitle>
         </DialogHeader>
 
-        <ResizablePanelGroup direction="horizontal" className="flex-1 gap-4">
-          <ResizablePanel defaultSize={50} minSize={30}>
-            <div className="h-full flex flex-col gap-4 pr-2">
-              <div className="space-y-2">
-                <Label>Question Generation Prompt</Label>
-                {questionPrompts.length > 0 && (
-                  <Select
-                    value={selectedQuestionPrompt?.id}
-                    onValueChange={(value) => {
-                      const prompt = questionPrompts.find(p => p.id === value);
-                      setSelectedQuestionPrompt(prompt || null);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a prompt" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {questionPrompts.map((prompt) => (
-                        <SelectItem key={prompt.id} value={prompt.id}>
+        <Tabs defaultValue="question" className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="question" className="text-base">
+              Question Generation
+            </TabsTrigger>
+            <TabsTrigger value="answer" className="text-base">
+              Answer Generation
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="question" className="flex-1 flex flex-col gap-6 overflow-hidden mt-0">
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Select Prompt Template</Label>
+              {questionPrompts.length > 0 && (
+                <Select
+                  value={selectedQuestionPrompt?.id}
+                  onValueChange={(value) => {
+                    const prompt = questionPrompts.find(p => p.id === value);
+                    setSelectedQuestionPrompt(prompt || null);
+                  }}
+                >
+                  <SelectTrigger className="h-12 text-base border-2 hover:border-primary/50 transition-colors">
+                    <SelectValue placeholder="Select a prompt template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {questionPrompts.map((prompt) => (
+                      <SelectItem key={prompt.id} value={prompt.id} className="text-base py-3">
+                        <div className="flex items-center gap-2">
                           {prompt.name}
                           {prompt.is_active && (
-                            <Badge variant="secondary" className="ml-2">Active</Badge>
+                            <Badge variant="default" className="ml-2">Active</Badge>
                           )}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              {selectedQuestionPrompt && questionVersions.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <History className="h-4 w-4" />
-                    Version
-                  </Label>
-                  <Select
-                    value={selectedQuestionVersion?.id}
-                    onValueChange={(value) => handleVersionChange(value, "question")}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select version" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {questionVersions.map((version) => (
-                        <SelectItem key={version.id} value={version.id}>
-                          Version {version.version_number} - {new Date(version.created_at).toLocaleDateString()}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
+            </div>
 
-              <div className="flex-1 flex flex-col gap-2 min-h-0">
-                <Label>Prompt Content</Label>
+            {selectedQuestionPrompt && questionVersions.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  Version History
+                </Label>
+                <Select
+                  value={selectedQuestionVersion?.id}
+                  onValueChange={(value) => handleVersionChange(value, "question")}
+                >
+                  <SelectTrigger className="h-12 text-base border-2 hover:border-primary/50 transition-colors">
+                    <SelectValue placeholder="Select version" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {questionVersions.map((version) => (
+                      <SelectItem key={version.id} value={version.id} className="text-base py-3">
+                        <div className="flex items-center justify-between w-full">
+                          <span>Version {version.version_number}</span>
+                          <span className="text-sm text-muted-foreground ml-4">
+                            {new Date(version.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="flex-1 flex flex-col gap-3 min-h-0">
+              <Label className="text-base font-semibold">Prompt Content</Label>
+              <div className="flex-1 relative rounded-lg border-2 overflow-hidden hover:border-primary/50 transition-colors bg-muted/30">
                 <Textarea
                   value={questionContent}
                   onChange={(e) => setQuestionContent(e.target.value)}
-                  className="flex-1 resize-none font-mono text-sm"
+                  className="h-full resize-none font-mono text-sm border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-4"
                   placeholder="Select a prompt to view its content..."
                 />
               </div>
             </div>
-          </ResizablePanel>
+          </TabsContent>
 
-          <ResizableHandle withHandle />
-
-          <ResizablePanel defaultSize={50} minSize={30}>
-            <div className="h-full flex flex-col gap-4 pl-2">
-              <div className="space-y-2">
-                <Label>Answer Generation Prompt</Label>
-                {answerPrompts.length > 0 && (
-                  <Select
-                    value={selectedAnswerPrompt?.id}
-                    onValueChange={(value) => {
-                      const prompt = answerPrompts.find(p => p.id === value);
-                      setSelectedAnswerPrompt(prompt || null);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a prompt" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {answerPrompts.map((prompt) => (
-                        <SelectItem key={prompt.id} value={prompt.id}>
+          <TabsContent value="answer" className="flex-1 flex flex-col gap-6 overflow-hidden mt-0">
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Select Prompt Template</Label>
+              {answerPrompts.length > 0 && (
+                <Select
+                  value={selectedAnswerPrompt?.id}
+                  onValueChange={(value) => {
+                    const prompt = answerPrompts.find(p => p.id === value);
+                    setSelectedAnswerPrompt(prompt || null);
+                  }}
+                >
+                  <SelectTrigger className="h-12 text-base border-2 hover:border-primary/50 transition-colors">
+                    <SelectValue placeholder="Select a prompt template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {answerPrompts.map((prompt) => (
+                      <SelectItem key={prompt.id} value={prompt.id} className="text-base py-3">
+                        <div className="flex items-center gap-2">
                           {prompt.name}
                           {prompt.is_active && (
-                            <Badge variant="secondary" className="ml-2">Active</Badge>
+                            <Badge variant="default" className="ml-2">Active</Badge>
                           )}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              {selectedAnswerPrompt && answerVersions.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <History className="h-4 w-4" />
-                    Version
-                  </Label>
-                  <Select
-                    value={selectedAnswerVersion?.id}
-                    onValueChange={(value) => handleVersionChange(value, "answer")}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select version" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {answerVersions.map((version) => (
-                        <SelectItem key={version.id} value={version.id}>
-                          Version {version.version_number} - {new Date(version.created_at).toLocaleDateString()}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
+            </div>
 
-              <div className="flex-1 flex flex-col gap-2 min-h-0">
-                <Label>Prompt Content</Label>
+            {selectedAnswerPrompt && answerVersions.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  Version History
+                </Label>
+                <Select
+                  value={selectedAnswerVersion?.id}
+                  onValueChange={(value) => handleVersionChange(value, "answer")}
+                >
+                  <SelectTrigger className="h-12 text-base border-2 hover:border-primary/50 transition-colors">
+                    <SelectValue placeholder="Select version" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {answerVersions.map((version) => (
+                      <SelectItem key={version.id} value={version.id} className="text-base py-3">
+                        <div className="flex items-center justify-between w-full">
+                          <span>Version {version.version_number}</span>
+                          <span className="text-sm text-muted-foreground ml-4">
+                            {new Date(version.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="flex-1 flex flex-col gap-3 min-h-0">
+              <Label className="text-base font-semibold">Prompt Content</Label>
+              <div className="flex-1 relative rounded-lg border-2 overflow-hidden hover:border-primary/50 transition-colors bg-muted/30">
                 <Textarea
                   value={answerContent}
                   onChange={(e) => setAnswerContent(e.target.value)}
-                  className="flex-1 resize-none font-mono text-sm"
+                  className="h-full resize-none font-mono text-sm border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-4"
                   placeholder="Select a prompt to view its content..."
                 />
               </div>
             </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </TabsContent>
+        </Tabs>
 
-        <div className="flex justify-end gap-2 pt-4 border-t mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <div className="flex justify-end gap-3 pt-6 border-t mt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)} size="lg">
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!selectedQuestionPrompt || !selectedAnswerPrompt}>
-            <Save className="h-4 w-4 mr-2" />
+          <Button onClick={handleSave} disabled={!selectedQuestionPrompt || !selectedAnswerPrompt} size="lg" className="gap-2">
+            <Save className="h-4 w-4" />
             Save Active Prompts
           </Button>
         </div>
