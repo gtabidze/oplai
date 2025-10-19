@@ -11,3 +11,12 @@ verify_jwt = false
 
 [functions.generate-system-prompt]
 verify_jwt = false
+
+[functions.get-google-config]
+verify_jwt = false
+
+[functions.google-drive-oauth]
+verify_jwt = true
+
+[functions.google-drive-sync]
+verify_jwt = true

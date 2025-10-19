@@ -141,10 +141,19 @@ export default function Datasets() {
     }
   };
 
+  const getGoogleClientId = async (): Promise<string> => {
+    // Get client ID from edge function
+    const { data, error } = await supabase.functions.invoke('get-google-config');
+    if (error || !data?.clientId) {
+      throw new Error('Failed to get Google client configuration');
+    }
+    return data.clientId;
+  };
+
   const handleGoogleDriveConnect = async () => {
     setIsConnecting(true);
     try {
-      const clientId = 'YOUR_GOOGLE_CLIENT_ID'; // This should be retrieved from backend
+      const clientId = await getGoogleClientId();
       const redirectUri = `${window.location.origin}/datasets`;
       const scope = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/userinfo.email';
       
@@ -157,9 +166,9 @@ export default function Datasets() {
         `prompt=consent`;
 
       window.location.href = authUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error connecting to Google Drive:', error);
-      toast.error('Failed to initiate Google Drive connection');
+      toast.error(error.message || 'Failed to initiate Google Drive connection');
       setIsConnecting(false);
     }
   };
