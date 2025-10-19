@@ -150,6 +150,31 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
         localStorage.setItem('questionSystemPrompt', questionContent);
         localStorage.setItem('answerSystemPrompt', answerContent);
         
+        // Create new versions if content has changed
+        if (selectedQuestionVersion && questionContent !== selectedQuestionVersion.content) {
+          const newVersionNumber = Math.max(...questionVersions.map(v => v.version_number)) + 1;
+          const { error: versionError } = await supabase
+            .from("prompt_versions")
+            .insert({
+              prompt_id: selectedQuestionPrompt.id,
+              content: questionContent,
+              version_number: newVersionNumber,
+            });
+          if (versionError) throw versionError;
+        }
+
+        if (selectedAnswerVersion && answerContent !== selectedAnswerVersion.content) {
+          const newVersionNumber = Math.max(...answerVersions.map(v => v.version_number)) + 1;
+          const { error: versionError } = await supabase
+            .from("prompt_versions")
+            .insert({
+              prompt_id: selectedAnswerPrompt.id,
+              content: answerContent,
+              version_number: newVersionNumber,
+            });
+          if (versionError) throw versionError;
+        }
+        
         // Set as active prompts in database
         const { error: questionError } = await supabase
           .from("prompts")
@@ -167,8 +192,14 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
         
         toast.success("System prompts activated successfully!");
         
-        // Reload prompts to update the UI with new active states
+        // Reload prompts and versions to update the UI
         await loadPrompts();
+        if (selectedQuestionPrompt) {
+          await loadVersions(selectedQuestionPrompt.id, "question");
+        }
+        if (selectedAnswerPrompt) {
+          await loadVersions(selectedAnswerPrompt.id, "answer");
+        }
         
         onOpenChange(false);
       } catch (error: any) {
