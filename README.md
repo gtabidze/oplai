@@ -1,4 +1,4 @@
-# Welcome to Oplai (hacktoberfest proejct)
+# Welcome to Oplai (hacktoberfest project)
 
 ## Project info
 
