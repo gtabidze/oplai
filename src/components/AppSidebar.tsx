@@ -48,7 +48,7 @@ const items = [
     icon: Workflow,
   },
   {
-    title: "Datasets",
+    title: "Knowledge sources",
     url: "/datasets",
     icon: Database,
   },
