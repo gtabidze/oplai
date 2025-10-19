@@ -1,4 +1,4 @@
-import { Home, BookOpen, Monitor, LayoutGrid, FlaskConical, Database, Settings } from "lucide-react";
+import { Home, BookOpen, Monitor, LayoutGrid, Database, Settings } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -19,7 +19,6 @@ const items = [
   { title: "Playbooks", url: "/playbooks", icon: BookOpen },
   { title: "Monitor", url: "/monitor", icon: Monitor },
   { title: "Playgrounds", url: "/playgrounds", icon: LayoutGrid },
-  { title: "Experiments", url: "/experiments", icon: FlaskConical },
   { title: "Datasets", url: "/datasets", icon: Database },
   { title: "Configuration", url: "/configuration", icon: Settings },
 ];
