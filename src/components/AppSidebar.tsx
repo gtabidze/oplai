@@ -10,6 +10,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/Logo";
@@ -60,6 +62,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="border-t border-border p-2">
+        <SidebarTrigger />
+      </SidebarFooter>
     </Sidebar>
   );
 }
