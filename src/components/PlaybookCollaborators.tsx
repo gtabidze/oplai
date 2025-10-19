@@ -2,17 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Share2, Copy, Check, UserPlus, X } from "lucide-react";
+import { Share2, Copy, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -43,7 +35,6 @@ export const PlaybookCollaborators = ({ playbookId, ownerId }: PlaybookCollabora
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [shareLink, setShareLink] = useState<string>("");
   const [copied, setCopied] = useState(false);
-  const [showShareDialog, setShowShareDialog] = useState(false);
   const [emailToAdd, setEmailToAdd] = useState("");
   const [selectedRole, setSelectedRole] = useState("viewer");
 
@@ -194,7 +185,6 @@ export const PlaybookCollaborators = ({ playbookId, ownerId }: PlaybookCollabora
     toast.success('Collaborator added');
     setEmailToAdd("");
     setSelectedRole("viewer");
-    setShowShareDialog(false);
   };
 
   const removeCollaborator = async (collaboratorId: string) => {
@@ -213,131 +203,110 @@ export const PlaybookCollaborators = ({ playbookId, ownerId }: PlaybookCollabora
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium">Collaborators</CardTitle>
-          {isOwner && (
-            <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <UserPlus className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Share Playbook</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-3">
-                    <Label>Email</Label>
-                    <Input
-                      type="email"
-                      placeholder="colleague@example.com"
-                      value={emailToAdd}
-                      onChange={(e) => setEmailToAdd(e.target.value)}
-                    />
-                    
-                    <Label>Role</Label>
-                    <Select value={selectedRole} onValueChange={setSelectedRole}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="owner">Owner</SelectItem>
-                        <SelectItem value="viewer">Viewer</SelectItem>
-                        <SelectItem value="commenter">Commenter</SelectItem>
-                        <SelectItem value="evaluator">Evaluator</SelectItem>
-                      </SelectContent>
-                    </Select>
+    <div className="space-y-6">
+      {isOwner && (
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <Label>Email</Label>
+            <Input
+              type="email"
+              placeholder="colleague@example.com"
+              value={emailToAdd}
+              onChange={(e) => setEmailToAdd(e.target.value)}
+            />
+            
+            <Label>Role</Label>
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="owner">Owner</SelectItem>
+                <SelectItem value="viewer">Viewer</SelectItem>
+                <SelectItem value="commenter">Commenter</SelectItem>
+                <SelectItem value="evaluator">Evaluator</SelectItem>
+              </SelectContent>
+            </Select>
 
-                    <Button onClick={addCollaboratorByEmail} className="w-full">
-                      Add Collaborator
-                    </Button>
-                  </div>
+            <Button onClick={addCollaboratorByEmail} className="w-full">
+              Add Collaborator
+            </Button>
+          </div>
 
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">Or</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Share Link</Label>
-                    {shareLink ? (
-                      <div className="flex gap-2 mt-2">
-                        <Input value={shareLink} readOnly />
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={copyShareLink}
-                        >
-                          {copied ? (
-                            <Check className="h-4 w-4" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        onClick={generateShareLink}
-                        className="w-full mt-2"
-                      >
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Generate Share Link
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {collaborators.map((collab) => (
-          <div key={collab.id} className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-xs">
-                  {collab.profiles?.full_name?.[0] || collab.profiles?.email?.[0] || '?'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-sm">
-                <div className="font-medium">
-                  {collab.profiles?.full_name || collab.profiles?.email || 'Unknown'}
-                </div>
-                <div className="text-xs text-muted-foreground capitalize">{collab.role}</div>
-              </div>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
             </div>
-            {isOwner && (
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Share Link</Label>
+            {shareLink ? (
+              <div className="flex gap-2">
+                <Input value={shareLink} readOnly />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={copyShareLink}
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            ) : (
               <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => removeCollaborator(collab.id)}
+                variant="outline"
+                onClick={generateShareLink}
+                className="w-full"
               >
-                <X className="h-3 w-3" />
+                <Share2 className="h-4 w-4 mr-2" />
+                Generate Share Link
               </Button>
             )}
           </div>
-        ))}
-        {collaborators.length === 0 && isOwner && (
-          <Button
-            variant="secondary"
-            className="w-full"
-            onClick={() => setShowShareDialog(true)}
-          >
-            <UserPlus className="mr-2 h-4 w-4" />
-            Add Collaborators
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      )}
+
+      {collaborators.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium">Current Collaborators</h3>
+          <div className="space-y-2">
+            {collaborators.map((collab) => (
+              <div key={collab.id} className="flex items-center justify-between p-2 rounded-lg border">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-xs">
+                      {collab.profiles?.full_name?.[0] || collab.profiles?.email?.[0] || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-sm">
+                    <div className="font-medium">
+                      {collab.profiles?.full_name || collab.profiles?.email || 'Unknown'}
+                    </div>
+                    <div className="text-xs text-muted-foreground capitalize">{collab.role}</div>
+                  </div>
+                </div>
+                {isOwner && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => removeCollaborator(collab.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
