@@ -23,6 +23,10 @@ const Home = () => {
     navigate(`/doc/${newPlaibook.id}`);
   };
 
+  const handleDelete = (id: string) => {
+    setPlaibooks(plaibooks.filter(pb => pb.id !== id));
+  };
+
   const integrationSteps = [
     {
       title: "Get started with GPT 4o",
@@ -99,9 +103,13 @@ const Home = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-2">
             {plaibooks.map((plaibook) => (
-              <PlaiBookCard key={plaibook.id} plaibook={plaibook} />
+              <PlaiBookCard 
+                key={plaibook.id} 
+                plaibook={plaibook} 
+                onDelete={handleDelete}
+              />
             ))}
           </div>
         )}
