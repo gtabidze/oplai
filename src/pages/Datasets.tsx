@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Cloud, CheckCircle, Loader2, RefreshCw } from "lucide-react";
+import { Cloud, CheckCircle, Loader2, RefreshCw, File, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,17 +37,17 @@ interface StorageProvider {
 
 const storageProviders: StorageProvider[] = [
   {
-    id: "dropbox",
-    name: "Dropbox",
-    logo: dropboxLogo,
-    description: "Cloud storage and file synchronization",
-    category: "Cloud Storage"
-  },
-  {
     id: "google-drive",
     name: "Google Drive",
     logo: googleDriveLogo,
     description: "Google's cloud storage service",
+    category: "Cloud Storage"
+  },
+  {
+    id: "dropbox",
+    name: "Dropbox",
+    logo: dropboxLogo,
+    description: "Cloud storage and file synchronization",
     category: "Cloud Storage"
   },
   {
@@ -122,9 +122,11 @@ export default function Datasets() {
   const [connectedProviders, setConnectedProviders] = useState<Set<string>>(new Set());
   const [isSyncing, setIsSyncing] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [syncedFiles, setSyncedFiles] = useState<any[]>([]);
 
   useEffect(() => {
     loadConnections();
+    loadSyncedFiles();
   }, [user]);
 
   const loadConnections = async () => {
@@ -138,6 +140,20 @@ export default function Datasets() {
 
     if (!error && data) {
       setConnectedProviders(new Set(data.map(d => d.provider)));
+    }
+  };
+
+  const loadSyncedFiles = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('synced_files')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('synced_at', { ascending: false });
+
+    if (!error && data) {
+      setSyncedFiles(data);
     }
   };
 
@@ -207,6 +223,7 @@ export default function Datasets() {
       if (error) throw error;
 
       toast.success(`Synced ${data.syncedFiles} files from ${data.totalFiles} total files`);
+      await loadSyncedFiles();
     } catch (error: any) {
       console.error('Sync error:', error);
       toast.error('Failed to sync files: ' + error.message);
@@ -276,6 +293,56 @@ export default function Datasets() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Synced Files Section */}
+        {syncedFiles.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold">Synced Files</h3>
+                <Badge variant="secondary" className="text-xs">
+                  {syncedFiles.length}
+                </Badge>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-3">
+              {syncedFiles.map((file) => (
+                <Card key={file.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                        <File className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium truncate">{file.file_name}</h4>
+                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(file.synced_at).toLocaleDateString()}
+                          </span>
+                          {file.file_type && (
+                            <Badge variant="outline" className="text-xs">
+                              {file.file_type}
+                            </Badge>
+                          )}
+                          {file.file_size && (
+                            <span>{(file.file_size / 1024).toFixed(1)} KB</span>
+                          )}
+                        </div>
+                        {file.file_path && (
+                          <p className="text-xs text-muted-foreground mt-1 truncate">
+                            {file.file_path}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Storage Providers by Category */}
         {Object.entries(groupedProviders).map(([category, providers]) => (
