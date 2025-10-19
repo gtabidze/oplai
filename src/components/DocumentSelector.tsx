@@ -54,12 +54,8 @@ export function DocumentSelector({
 
       if (error) throw error;
 
-      // Filter for documents with content
-      const docsWithContent = (data || []).filter(doc => 
-        doc.content && doc.content.trim().length > 0
-      );
-
-      setDocuments(docsWithContent);
+      // Show all documents
+      setDocuments(data || []);
     } catch (error) {
       console.error('Error loading documents:', error);
       toast.error('Failed to load documents');
@@ -140,6 +136,11 @@ export function DocumentSelector({
                         <span className="font-medium text-sm truncate">
                           {doc.file_name}
                         </span>
+                        {!doc.content && (
+                          <Badge variant="secondary" className="text-xs">
+                            No content
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Badge variant="outline" className="text-xs">
