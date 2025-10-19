@@ -5,6 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const authSchema = z.object({
+  email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(128, "Password must be less than 128 characters"),
+  fullName: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters").optional(),
+});
 
 export const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -18,28 +25,40 @@ export const Auth = () => {
     setLoading(true);
 
     try {
+      // Validate inputs
+      const validated = authSchema.parse({
+        email,
+        password,
+        fullName: isSignUp ? fullName : undefined,
+      });
+
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({
-          email,
-          password,
+          email: validated.email,
+          password: validated.password,
           options: {
             data: {
-              full_name: fullName,
+              full_name: validated.fullName,
             },
+            emailRedirectTo: `${window.location.origin}/`,
           },
         });
         if (error) throw error;
         toast.success("Account created successfully!");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: validated.email,
+          password: validated.password,
         });
         if (error) throw error;
         toast.success("Logged in successfully!");
       }
     } catch (error: any) {
-      toast.error(error.message);
+      if (error instanceof z.ZodError) {
+        toast.error(error.issues[0].message);
+      } else {
+        toast.error(error.message);
+      }
     } finally {
       setLoading(false);
     }
