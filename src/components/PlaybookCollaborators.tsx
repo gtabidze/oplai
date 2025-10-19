@@ -304,10 +304,15 @@ export const PlaybookCollaborators = ({ playbookId, ownerId }: PlaybookCollabora
             )}
           </div>
         ))}
-        {collaborators.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-2">
-            No collaborators yet
-          </p>
+        {collaborators.length === 0 && isOwner && (
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => setShowShareDialog(true)}
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Add Collaborators
+          </Button>
         )}
       </CardContent>
     </Card>
