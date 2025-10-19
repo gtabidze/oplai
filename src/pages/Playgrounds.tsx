@@ -353,7 +353,7 @@ const Playgrounds = () => {
       </div>
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent className="w-[50vw] max-w-[50vw] overflow-y-auto">
+        <SheetContent className="w-[50vw] sm:max-w-none overflow-y-auto">
           {selectedQuestion && (
             <>
               <SheetHeader>
@@ -517,8 +517,8 @@ const Playgrounds = () => {
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">Generated Answers</p>
                     
-                    {/* Show comparison view if we have multiple answers */}
-                    {selectedQuestion.answers && selectedQuestion.answers.length >= 2 ? (
+                    {/* Show comparison view only in comparison mode and if we have multiple answers */}
+                    {comparisonMode && selectedQuestion.answers && selectedQuestion.answers.length >= 2 ? (
                       <div className="grid grid-cols-2 gap-3">
                         {selectedQuestion.answers.slice(-2).map((ans, idx) => (
                           <div key={idx} className="bg-muted/50 p-3 rounded-lg">
