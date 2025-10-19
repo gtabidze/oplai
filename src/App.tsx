@@ -8,6 +8,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Home from "./pages/Home";
 import Editor from "./pages/Editor";
+import Playbooks from "./pages/Playbooks";
 import Playgrounds from "./pages/Playgrounds";
 import Monitor from "./pages/Monitor";
 import NotFound from "./pages/NotFound";
@@ -31,6 +32,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/doc/:id" element={<Editor />} />
+                  <Route path="/playbooks" element={<Playbooks />} />
                   <Route path="/playgrounds" element={<Playgrounds />} />
                   <Route path="/monitor" element={<Monitor />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
