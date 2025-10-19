@@ -9,8 +9,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarHeader,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Logo } from "@/components/Logo";
 
 const items = [
   { title: "Procedures", url: "/", icon: FileText },
@@ -24,9 +26,14 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
+      <SidebarHeader className="border-b border-border p-4">
+        <div className="flex items-center gap-2">
+          <Logo className="h-8 w-8 text-foreground" />
+          {open && <span className="font-semibold text-lg">Pro AI Agent</span>}
+        </div>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Pro AI Agent</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
