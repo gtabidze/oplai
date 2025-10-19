@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ThumbsUp, ThumbsDown, Trash2, Edit2, RotateCw, Save, X } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Trash2, Edit2, RotateCw, Save, X, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -58,6 +58,13 @@ const Playgrounds = () => {
   const [comparisonMode, setComparisonMode] = useState(false);
   const [compareProvider, setCompareProvider] = useState<string>("openai");
   const [compareModel, setCompareModel] = useState<string>("gpt-4o");
+  
+  // Search, sort, and filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortColumn, setSortColumn] = useState<"question" | "playbook" | "status" | "score" | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [filterPlaybook, setFilterPlaybook] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const providerModels: Record<string, { value: string; label: string }[]> = {
     lovable: [
@@ -298,6 +305,86 @@ const Playgrounds = () => {
     }
   };
 
+  const handleSort = (column: "question" | "playbook" | "status" | "score") => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const getFilteredAndSortedQuestions = () => {
+    let filtered = allQuestions;
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (q) =>
+          q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          q.plaibookTitle.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply playbook filter
+    if (filterPlaybook !== "all") {
+      filtered = filtered.filter((q) => q.plaibookId === filterPlaybook);
+    }
+
+    // Apply status filter
+    if (filterStatus !== "all") {
+      if (filterStatus === "answered") {
+        filtered = filtered.filter((q) => q.answer);
+      } else if (filterStatus === "pending") {
+        filtered = filtered.filter((q) => !q.answer);
+      }
+    }
+
+    // Apply sorting
+    if (sortColumn) {
+      filtered = [...filtered].sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
+
+        switch (sortColumn) {
+          case "question":
+            aValue = a.question.toLowerCase();
+            bValue = b.question.toLowerCase();
+            break;
+          case "playbook":
+            aValue = a.plaibookTitle.toLowerCase();
+            bValue = b.plaibookTitle.toLowerCase();
+            break;
+          case "status":
+            aValue = a.answer ? 1 : 0;
+            bValue = b.answer ? 1 : 0;
+            break;
+          case "score":
+            aValue = a.feedback?.score ?? -1;
+            bValue = b.feedback?.score ?? -1;
+            break;
+          default:
+            return 0;
+        }
+
+        if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+        if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  };
+
+  const uniquePlaybooks = Array.from(
+    new Set(allQuestions.map((q) => q.plaibookId))
+  ).map((id) => {
+    const question = allQuestions.find((q) => q.plaibookId === id);
+    return { id, title: question?.plaibookTitle || "" };
+  });
+
+  const filteredQuestions = getFilteredAndSortedQuestions();
+
   return (
     <div className="flex-1 p-8">
       <div className="max-w-7xl mx-auto">
@@ -306,25 +393,149 @@ const Playgrounds = () => {
           All questions generated across your playbooks
         </p>
 
+        {/* Search and Filters */}
+        <div className="mb-4 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search questions or playbooks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          
+          <div className="flex gap-3">
+            <Select value={filterPlaybook} onValueChange={setFilterPlaybook}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="All Playbooks" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Playbooks</SelectItem>
+                {uniquePlaybooks.map((playbook) => (
+                  <SelectItem key={playbook.id} value={playbook.id}>
+                    {playbook.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="answered">Answered</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {(searchQuery || filterPlaybook !== "all" || filterStatus !== "all") && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSearchQuery("");
+                  setFilterPlaybook("all");
+                  setFilterStatus("all");
+                  setSortColumn(null);
+                }}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        </div>
+
         <div className="border rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50%]">Question</TableHead>
-                <TableHead>Playbook</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Score</TableHead>
+                <TableHead className="w-[50%]">
+                  <Button
+                    variant="ghost"
+                    className="h-8 px-2 -ml-2"
+                    onClick={() => handleSort("question")}
+                  >
+                    Question
+                    {sortColumn === "question" ? (
+                      sortDirection === "asc" ? (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                      ) : (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    )}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    className="h-8 px-2 -ml-2"
+                    onClick={() => handleSort("playbook")}
+                  >
+                    Playbook
+                    {sortColumn === "playbook" ? (
+                      sortDirection === "asc" ? (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                      ) : (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    )}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    className="h-8 px-2 -ml-2"
+                    onClick={() => handleSort("status")}
+                  >
+                    Status
+                    {sortColumn === "status" ? (
+                      sortDirection === "asc" ? (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                      ) : (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    )}
+                  </Button>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Button
+                    variant="ghost"
+                    className="h-8 px-2 -mr-2 ml-auto"
+                    onClick={() => handleSort("score")}
+                  >
+                    Score
+                    {sortColumn === "score" ? (
+                      sortDirection === "asc" ? (
+                        <ArrowUp className="ml-2 h-4 w-4" />
+                      ) : (
+                        <ArrowDown className="ml-2 h-4 w-4" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    )}
+                  </Button>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {allQuestions.length === 0 ? (
+              {filteredQuestions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                    No questions generated yet. Create a playbook and generate questions to get started.
+                    {allQuestions.length === 0
+                      ? "No questions generated yet. Create a playbook and generate questions to get started."
+                      : "No questions match your search criteria."}
                   </TableCell>
                 </TableRow>
               ) : (
-                allQuestions.map((question) => (
+                filteredQuestions.map((question) => (
                   <TableRow
                     key={question.id}
                     className="cursor-pointer"
