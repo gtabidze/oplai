@@ -13,6 +13,7 @@ const Home = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [plaibooks] = useLocalStorage<Plaibook[]>("plaibooks", []);
+  const [searchQuery, setSearchQuery] = useState("");
   const [stats, setStats] = useState({
     totalPlaibooks: 0,
     totalQuestions: 0,
@@ -24,7 +25,7 @@ const Home = () => {
   useEffect(() => {
     calculateStats();
     loadRecentPlaibooks();
-  }, [plaibooks]);
+  }, [plaibooks, searchQuery]);
 
   const calculateStats = () => {
     let totalQuestions = 0;
@@ -50,8 +51,30 @@ const Home = () => {
   };
 
   const loadRecentPlaibooks = () => {
-    const sorted = [...plaibooks].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 3);
+    const filtered = getFilteredPlaibooks();
+    const sorted = [...filtered].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 3);
     setRecentPlaibooks(sorted);
+  };
+
+  const getFilteredPlaibooks = () => {
+    if (!searchQuery.trim()) {
+      return plaibooks;
+    }
+
+    const query = searchQuery.toLowerCase();
+    return plaibooks.filter((plaibook) => {
+      // Search in playbook title
+      if (plaibook.title.toLowerCase().includes(query)) {
+        return true;
+      }
+      
+      // Search in questions
+      if (plaibook.questions?.some((q) => q.question.toLowerCase().includes(query))) {
+        return true;
+      }
+      
+      return false;
+    });
   };
 
   const handleCreateNew = () => {
@@ -95,6 +118,8 @@ const Home = () => {
             type="search"
             placeholder="Search All Playbooks or Questions"
             className="pl-10 h-12 text-base"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
