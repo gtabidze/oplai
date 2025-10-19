@@ -11,6 +11,23 @@ export function getAllPlaibooks(): Plaibook[] {
   }
 }
 
+export function savePlaibook(plaibook: Plaibook): void {
+  try {
+    const plaibooks = getAllPlaibooks();
+    const index = plaibooks.findIndex(p => p.id === plaibook.id);
+    
+    if (index >= 0) {
+      plaibooks[index] = plaibook;
+    } else {
+      plaibooks.push(plaibook);
+    }
+    
+    window.localStorage.setItem('plaibooks', JSON.stringify(plaibooks));
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(() => {
     if (typeof window === 'undefined') {
