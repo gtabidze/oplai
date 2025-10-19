@@ -18,7 +18,11 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+- Lovable AI
+- Gemini/OpenAI
+
 ## Collaborators
 
 Gua Tabidze
+
 Levan Parastashvili
