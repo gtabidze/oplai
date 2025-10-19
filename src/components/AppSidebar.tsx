@@ -42,6 +42,15 @@ export function AppSidebar() {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<{ full_name?: string; avatar_url?: string } | null>(null);
 
+  // Helper function to ensure proper case formatting
+  const toProperCase = (text: string) => {
+    return text
+      .trim()
+      .split(/\s+/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   useEffect(() => {
     if (user) {
       supabase
@@ -122,7 +131,7 @@ export function AppSidebar() {
                       </Avatar>
                       <div className="flex-1 text-left min-w-0">
                         <p className="text-xs font-medium truncate">
-                          {profile?.full_name || user.email}
+                          {profile?.full_name ? toProperCase(profile.full_name) : user.email}
                         </p>
                       </div>
                     </button>

@@ -58,13 +58,23 @@ export const AccountSettings = () => {
     try {
       const validated = profileSchema.parse({ fullName });
       
+      // Convert to proper case (Title Case)
+      const properCaseName = validated.fullName
+        .trim()
+        .split(/\s+/)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+      
       setIsLoading(true);
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: validated.fullName })
+        .update({ full_name: properCaseName })
         .eq("id", user?.id);
 
       if (error) throw error;
+
+      // Update local state to reflect the change
+      setFullName(properCaseName);
 
       toast({
         title: "Profile updated",
