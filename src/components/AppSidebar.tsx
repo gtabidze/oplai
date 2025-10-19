@@ -14,7 +14,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Logo } from "@/components/Logo";
 
 const items = [
   { title: "Home", url: "/", icon: Home },
@@ -31,10 +30,14 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-border h-[72px] flex items-center px-4">
-        <div className="flex items-center gap-2">
-          <Logo className="h-8 w-8 text-foreground" />
-          {open && <span className="font-orbitron font-bold text-lg tracking-wider uppercase">OPLAI</span>}
-        </div>
+        {open ? (
+          <div className="flex flex-col gap-0.5">
+            <span className="font-orbitron font-bold text-2xl tracking-wider uppercase">OPLAI</span>
+            <span className="text-[10px] text-muted-foreground tracking-wide uppercase">Operational PlayBook</span>
+          </div>
+        ) : (
+          <span className="font-orbitron font-bold text-xl">O</span>
+        )}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
