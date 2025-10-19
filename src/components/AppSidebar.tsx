@@ -29,7 +29,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-border p-4">
         <div className="flex items-center gap-2">
           <Logo className="h-8 w-8 text-foreground" />
-          {open && <span className="font-semibold text-lg">Pro AI Agent</span>}
+          {open && <span className="font-semibold text-lg">Plaibook</span>}
         </div>
       </SidebarHeader>
       <SidebarContent>
