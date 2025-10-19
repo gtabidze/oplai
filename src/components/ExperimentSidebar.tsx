@@ -20,6 +20,7 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingAnswerId, setGeneratingAnswerId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [regeneratingQuestionId, setRegeneratingQuestionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (plaibook?.questions) {
@@ -125,6 +126,48 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
     toast.success("Question deleted");
   };
 
+  const handleRegenerateQuestion = async (questionId: string) => {
+    if (!plaibook) return;
+
+    setRegeneratingQuestionId(questionId);
+    try {
+      const customPrompt = localStorage.getItem('questionSystemPrompt');
+      const llmProvider = localStorage.getItem('llmProvider') || 'lovable';
+      const { data, error } = await supabase.functions.invoke("generate-questions", {
+        body: { 
+          documentContent: plaibook.content,
+          customSystemPrompt: customPrompt 
+            ? customPrompt + "\n\nGenerate exactly 1 question."
+            : 'You are a helpful assistant that generates questions. Analyze the provided text and generate 1 question that end users would ask about the facts, content, and subject matter presented in the text. Focus on the actual content, NOT meta-questions about the document itself. Return ONLY a JSON array with a single string, nothing else.',
+          llmProvider,
+          count: 1
+        },
+      });
+
+      if (error) throw error;
+
+      const newQuestion = data.questions?.[0];
+      if (!newQuestion) {
+        throw new Error("No question generated");
+      }
+
+      const updatedQuestions = questions.map((q) =>
+        q.id === questionId 
+          ? { ...q, question: newQuestion, answer: undefined, feedback: undefined }
+          : q
+      );
+      
+      setQuestions(updatedQuestions);
+      onUpdateQuestions(updatedQuestions);
+      toast.success("Question regenerated!");
+    } catch (error) {
+      console.error("Error regenerating question:", error);
+      toast.error("Failed to regenerate question. Please try again.");
+    } finally {
+      setRegeneratingQuestionId(null);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -185,14 +228,27 @@ export const ExperimentSidebar = ({ plaibook, onUpdateQuestions }: ExperimentSid
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">
                 <CardTitle className="text-sm font-medium flex-1">{q.question}</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 -mt-1"
-                  onClick={() => handleDeleteQuestion(q.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 -mt-1"
+                    onClick={() => handleRegenerateQuestion(q.id)}
+                    disabled={regeneratingQuestionId === q.id}
+                    title="Regenerate question"
+                  >
+                    <RotateCw className={`h-3 w-3 ${regeneratingQuestionId === q.id ? 'animate-spin' : ''}`} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 -mt-1"
+                    onClick={() => handleDeleteQuestion(q.id)}
+                    title="Delete question"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
