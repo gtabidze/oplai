@@ -65,8 +65,9 @@ export const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 bg-[length:200%_200%] animate-gradient">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-900/0 to-slate-900/0"></div>
+      <Card className="w-full max-w-md relative z-10 shadow-2xl border-slate-800/50 backdrop-blur-sm bg-card/95">
         <CardHeader>
           <CardTitle>{isSignUp ? "Create Account" : "Welcome Back"}</CardTitle>
           <CardDescription>
