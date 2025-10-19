@@ -1,119 +1,270 @@
-import { Button } from "@/components/ui/button";
-import { PlaiBookCard } from "@/components/PlaiBookCard";
-import { useLocalStorage } from "@/lib/localStorage";
-import { Plaibook } from "@/lib/types";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, FileText, Lightbulb } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useLocalStorage } from "@/lib/localStorage";
+import { Plaibook, SavedQuestion } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, FileText, MessageSquare, CheckCircle, TrendingUp, Clock, ArrowRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 const Home = () => {
   const navigate = useNavigate();
-  const [plaibooks, setPlaibooks] = useLocalStorage<Plaibook[]>('plaibooks', []);
+  const [plaibooks] = useLocalStorage<Plaibook[]>("plaibooks", []);
+  const [stats, setStats] = useState({
+    totalPlaibooks: 0,
+    totalQuestions: 0,
+    answeredQuestions: 0,
+    avgCompletionRate: 0,
+  });
+  const [recentPlaibooks, setRecentPlaibooks] = useState<Plaibook[]>([]);
+
+  useEffect(() => {
+    calculateStats();
+    loadRecentPlaibooks();
+  }, [plaibooks]);
+
+  const calculateStats = () => {
+    let totalQuestions = 0;
+    let answeredQuestions = 0;
+
+    plaibooks.forEach((plaibook: Plaibook) => {
+      if (plaibook.questions) {
+        totalQuestions += plaibook.questions.length;
+        answeredQuestions += plaibook.questions.filter((q: SavedQuestion) => q.answer).length;
+      }
+    });
+
+    const avgCompletion = totalQuestions > 0 
+      ? Math.round((answeredQuestions / totalQuestions) * 100) 
+      : 0;
+
+    setStats({
+      totalPlaibooks: plaibooks.length,
+      totalQuestions,
+      answeredQuestions,
+      avgCompletionRate: avgCompletion,
+    });
+  };
+
+  const loadRecentPlaibooks = () => {
+    const sorted = [...plaibooks].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 3);
+    setRecentPlaibooks(sorted);
+  };
 
   const handleCreateNew = () => {
     const newPlaibook: Plaibook = {
       id: crypto.randomUUID(),
-      title: 'Untitled Plaibook',
-      content: '',
+      title: "Untitled Playbook",
+      content: "",
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      questions: [],
     };
 
-    setPlaibooks([...plaibooks, newPlaibook]);
+    const updatedPlaibooks = [...plaibooks, newPlaibook];
+    localStorage.setItem("plaibooks", JSON.stringify(updatedPlaibooks));
     navigate(`/doc/${newPlaibook.id}`);
   };
 
-  const handleDelete = (id: string) => {
-    setPlaibooks(plaibooks.filter(pb => pb.id !== id));
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
-  const integrationSteps = [
-    {
-      title: "Get started with GPT 4o",
-      description: "Use OpenAI models for creating AI procedures instantly",
-    },
-    {
-      title: "Use Anthropic Claude",
-      description: "Connect Claude for advanced reasoning and long context",
-    },
-    {
-      title: "Custom Integrations",
-      description: "Build your own integrations with external AI systems",
-    },
-  ];
+  const getQuestionStats = (plaibook: Plaibook) => {
+    const total = plaibook.questions?.length || 0;
+    const answered = plaibook.questions?.filter((q) => q.answer).length || 0;
+    return { total, answered };
+  };
 
   return (
-    <div className="flex-1 overflow-auto">
-      <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-14 items-center gap-4 px-6">
-          <h1 className="text-lg font-semibold">Playbooks</h1>
-          <div className="ml-auto flex items-center gap-2">
-            <Button onClick={handleCreateNew} size="sm">
-              <Plus className="mr-1 h-4 w-4" />
-              New Playbook
-            </Button>
+    <div className="flex-1 p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground mt-2">
+              Overview of your evaluation workspace
+            </p>
           </div>
+          <Button onClick={handleCreateNew} size="lg">
+            <Plus className="h-5 w-5 mr-2" />
+            New Playbook
+          </Button>
         </div>
-      </header>
 
-      <main className="p-6">
-        {plaibooks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-[60vh]">
-            <div className="text-center max-w-md space-y-6">
-              <h2 className="text-3xl font-semibold tracking-tight">
-                Create your first Playbook
-              </h2>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Playbooks contain specific instructions for an AI agent to carry out tasks. Once you create a playbook, you can manage it below. 
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Playbooks</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalPlaibooks}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Knowledge bases
               </p>
-              <Button onClick={handleCreateNew} size="lg" className="mt-4">
-                <Plus className="mr-2 h-4 w-4" />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Questions</CardTitle>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalQuestions}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Evaluation questions
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Answered</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.answeredQuestions}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                of {stats.totalQuestions} questions
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.avgCompletionRate}%</div>
+              <Progress value={stats.avgCompletionRate} className="mt-2 h-1" />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={handleCreateNew}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
                 Create Playbook
-              </Button>
-            </div>
+              </CardTitle>
+              <CardDescription>
+                Start a new knowledge base with AI evaluation
+              </CardDescription>
+            </CardHeader>
+          </Card>
 
-            <div className="w-full max-w-3xl mt-20 space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold">Connect to external systems</h3>
-                <p className="text-sm text-muted-foreground">
-                  Enhance your AI agent's capabilities by connecting to external AI models and services. 
-                  All your data stays encrypted and secure.
-                </p>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/playbooks')}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                View All Playbooks
+              </CardTitle>
+              <CardDescription>
+                Manage and organize your playbooks
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/monitor')}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                View Analytics
+              </CardTitle>
+              <CardDescription>
+                Check performance and insights
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+
+        {/* Recent Playbooks */}
+        {recentPlaibooks.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Recent Playbooks</CardTitle>
+                  <CardDescription>Your most recently updated playbooks</CardDescription>
+                </div>
+                <Button variant="ghost" onClick={() => navigate('/playbooks')}>
+                  View All
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
               </div>
-
-              <div className="space-y-3">
-                {integrationSteps.map((step, index) => (
-                  <Card key={index} className="border-border hover:border-primary/50 transition-colors">
-                    <CardContent className="flex items-start gap-4 p-4">
-                      <div className="mt-1">
-                        <Lightbulb className="h-5 w-5 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentPlaibooks.map((plaibook) => {
+                  const stats = getQuestionStats(plaibook);
+                  return (
+                    <div
+                      key={plaibook.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/doc/${plaibook.id}`)}
+                    >
+                      <div className="flex-1">
+                        <h3 className="font-medium">{plaibook.title}</h3>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {formatDate(plaibook.updatedAt)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MessageSquare className="h-3 w-3" />
+                            {stats.answered}/{stats.total} answered
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex-1 space-y-1">
-                        <h4 className="text-sm font-medium">{step.title}</h4>
-                        <p className="text-sm text-muted-foreground">{step.description}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="text-sm font-medium">
+                            {stats.total > 0 ? Math.round((stats.answered / stats.total) * 100) : 0}%
+                          </div>
+                          <Progress 
+                            value={stats.total > 0 ? (stats.answered / stats.total) * 100 : 0} 
+                            className="w-20 h-2 mt-1"
+                          />
+                        </div>
+                        <ArrowRight className="h-5 w-5 text-muted-foreground" />
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
-
-              <p className="text-xs text-muted-foreground text-center pt-4">
-                Manage all integrations → Settings
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {plaibooks.map((plaibook) => (
-              <PlaiBookCard 
-                key={plaibook.id} 
-                plaibook={plaibook} 
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
+            </CardContent>
+          </Card>
         )}
-      </main>
+
+        {/* Empty State */}
+        {plaibooks.length === 0 && (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Welcome to Oplai</h3>
+              <p className="text-muted-foreground text-center mb-6 max-w-md">
+                Create your first playbook to start building your AI evaluation workspace
+              </p>
+              <Button onClick={handleCreateNew} size="lg">
+                <Plus className="h-5 w-5 mr-2" />
+                Create Your First Playbook
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };
