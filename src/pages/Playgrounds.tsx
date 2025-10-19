@@ -353,7 +353,7 @@ const Playgrounds = () => {
       </div>
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent className="w-[400px] sm:w-[540px]">
+        <SheetContent className="w-[90vw] sm:w-[700px] lg:w-[900px] overflow-y-auto">
           {selectedQuestion && (
             <>
               <SheetHeader>
@@ -538,18 +538,21 @@ const Playgrounds = () => {
                     
                     {/* Show comparison view if we have multiple answers */}
                     {selectedQuestion.answers && selectedQuestion.answers.length >= 2 ? (
-                      <div className="space-y-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {selectedQuestion.answers.slice(-2).map((ans, idx) => (
                           <div key={idx} className="bg-muted/50 p-4 rounded-lg">
                             <div className="flex items-center justify-between mb-2">
                               <p className="text-xs font-semibold text-primary">
-                                {ans.provider === "lovable" ? "Lovable AI" : ans.provider === "openai" ? "OpenAI" : "Anthropic"} - {ans.model}
+                                {ans.provider === "lovable" ? "Lovable AI" : ans.provider === "openai" ? "OpenAI" : "Anthropic"}
                               </p>
                               <p className="text-xs text-muted-foreground">
                                 {new Date(ans.timestamp).toLocaleTimeString()}
                               </p>
                             </div>
-                            <p className="text-sm leading-relaxed">{ans.text}</p>
+                            <p className="text-xs text-muted-foreground mb-2">{ans.model}</p>
+                            <div className="max-h-[400px] overflow-y-auto">
+                              <p className="text-sm leading-relaxed">{ans.text}</p>
+                            </div>
                           </div>
                         ))}
                       </div>
