@@ -615,7 +615,7 @@ export const PromptSettingsModal = ({ open, onOpenChange }: PromptSettingsModalP
               <Textarea
                 value={newPromptContent}
                 onChange={(e) => setNewPromptContent(e.target.value)}
-                className="min-h-[400px] font-mono text-sm leading-relaxed"
+                className="min-h-[250px] font-mono text-sm leading-relaxed"
                 placeholder="Enter your system prompt with proper structure including role definition, task description, output format, best practices, restrictions, and considerations..."
               />
             </div>
