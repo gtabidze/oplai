@@ -12,6 +12,7 @@ import Home from "./pages/Home";
 import Editor from "./pages/Editor";
 import Playbooks from "./pages/Playbooks";
 import Playgrounds from "./pages/Playgrounds";
+import Datasets from "./pages/Datasets";
 import Configuration from "./pages/Configuration";
 import Account from "./pages/Account";
 import Monitor from "./pages/Monitor";
@@ -63,6 +64,7 @@ const App = () => (
                           <Route path="/doc/:id" element={<Editor />} />
                           <Route path="/playbooks" element={<Playbooks />} />
                           <Route path="/playgrounds" element={<Playgrounds />} />
+                          <Route path="/datasets" element={<Datasets />} />
                           <Route path="/configuration" element={<Configuration />} />
                           <Route path="/account" element={<Account />} />
                           <Route path="/monitor" element={<Monitor />} />
