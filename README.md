@@ -3,7 +3,7 @@
 > A modern, collaborative platform for creating AI-powered evaluation playbooks and knowledge bases.
 
 
-**Try now!**: https://oplai.lovable.app/  |  Admin: guatabidze@gmail.com | Pass: admin123
+**Try now!**: https://oplai.lovable.app/ (Requires simple registration)
 
 ---
 
