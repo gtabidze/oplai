@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useLocalStorage } from "@/lib/localStorage";
 import { Plaibook } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, FileText, Calendar, Trash2, MessageSquare } from "lucide-react";
-import { usePlaybookSync } from "@/hooks/usePlaybookSync";
+import { Plus, FileText, Calendar, Trash2, MessageSquare, Loader2 } from "lucide-react";
+import { usePlaybooks } from "@/hooks/usePlaybooks";
 import { useAuth } from "@/hooks/useAuth";
 import {
   AlertDialog,
@@ -21,11 +20,8 @@ import {
 const Playbooks = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [plaibooks, setPlaibooks] = useLocalStorage<Plaibook[]>("plaibooks", []);
+  const { playbooks, isLoading, createPlaybook, deletePlaybook } = usePlaybooks();
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  
-  // Sync playbooks to database
-  usePlaybookSync();
 
   const handleCreateNew = () => {
     const newPlaibook: Plaibook = {
@@ -38,13 +34,13 @@ const Playbooks = () => {
       user_id: user?.id || '',
     };
 
-    setPlaibooks([...plaibooks, newPlaibook]);
+    createPlaybook(newPlaibook);
     navigate(`/doc/${newPlaibook.id}`);
   };
 
   const handleDelete = () => {
     if (deleteId) {
-      setPlaibooks(plaibooks.filter((pb) => pb.id !== deleteId));
+      deletePlaybook(deleteId);
       setDeleteId(null);
     }
   };
@@ -80,7 +76,11 @@ const Playbooks = () => {
           </Button>
         </div>
 
-        {plaibooks.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : playbooks.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-16">
               <FileText className="h-16 w-16 text-muted-foreground mb-4" />
@@ -96,7 +96,7 @@ const Playbooks = () => {
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {plaibooks.map((plaibook) => {
+            {playbooks.map((plaibook) => {
               const stats = getQuestionStats(plaibook);
               return (
                 <Card

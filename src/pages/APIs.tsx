@@ -26,7 +26,6 @@ import {
 import { toast } from "sonner";
 import { useLocalStorage } from "@/lib/localStorage";
 import { Plaibook } from "@/lib/types";
-import { usePlaybookSync } from "@/hooks/usePlaybookSync";
 
 interface APIEndpoint {
   id: string;
@@ -49,9 +48,6 @@ const APIs = () => {
   const [plaibooks] = useLocalStorage<Plaibook[]>("plaibooks", []);
   const [endpoints, setEndpoints] = useState<APIEndpoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Ensure playbooks are synced to the backend so API can read them
-  usePlaybookSync();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);

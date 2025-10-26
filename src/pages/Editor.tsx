@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useLocalStorage } from "@/lib/localStorage";
-import { Plaibook } from "@/lib/types";
+import { SavedQuestion } from "@/lib/types";
 import { ExperimentSidebar } from "@/components/ExperimentSidebar";
 import { ActiveUsers } from "@/components/ActiveUsers";
 import { PlaybookCollaborators } from "@/components/PlaybookCollaborators";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, UserPlus, MoreVertical, Trash2, History } from "lucide-react";
+import { usePlaybook } from "@/hooks/usePlaybook";
+import { ArrowLeft, UserPlus, MoreVertical, Trash2, History, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,13 +46,22 @@ const Editor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [plaibooks, setPlaibooks] = useLocalStorage<Plaibook[]>('plaibooks', []);
-  const [currentPlaibook, setCurrentPlaibook] = useState<Plaibook | null>(null);
+  const { playbook, isLoading, updatePlaybook, updateQuestions } = usePlaybook(id);
   const [title, setTitle] = useState('');
   const [editorContent, setEditorContent] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [showCollaborators, setShowCollaborators] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const debouncedUpdate = useCallback(
+    (content: string) => {
+      const timer = setTimeout(() => {
+        updatePlaybook({ content });
+      }, 500);
+      return () => clearTimeout(timer);
+    },
+    [updatePlaybook]
+  );
 
   const editor = useEditor({
     extensions: [
@@ -68,119 +78,61 @@ const Editor = () => {
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
-      setEditorContent(html); // Update state immediately
-      if (!currentPlaibook) return;
-      
-      const timer = setTimeout(() => {
-        const updatedPlaibooks = plaibooks.map((p) =>
-          p.id === currentPlaibook.id
-            ? { ...p, content: html, updatedAt: Date.now() }
-            : p
-        );
-        setPlaibooks(updatedPlaibooks);
-        setCurrentPlaibook(prev => prev ? { ...prev, content: html, updatedAt: Date.now() } : null);
-      }, 500);
-      
-      return () => clearTimeout(timer);
+      setEditorContent(html);
+      debouncedUpdate(html);
     },
   });
 
   useEffect(() => {
-    const plaibook = plaibooks.find((p) => p.id === id);
-    if (plaibook) {
-      // Ensure user_id is set for existing playbooks
-      if (!plaibook.user_id) {
-        const updatedPlaibook = { ...plaibook, user_id: user?.id || '' };
-        const updatedPlaibooks = plaibooks.map((p) =>
-          p.id === id ? updatedPlaibook : p
-        );
-        setPlaibooks(updatedPlaibooks);
-        setCurrentPlaibook(updatedPlaibook);
-      } else {
-        setCurrentPlaibook(plaibook);
-      }
-      
-      setTitle(plaibook.title);
-      setEditorContent(plaibook.content);
+    if (playbook) {
+      setTitle(playbook.title);
+      setEditorContent(playbook.content);
       if (editor && !editor.isFocused) {
-        editor.commands.setContent(plaibook.content);
+        editor.commands.setContent(playbook.content);
       }
-    } else {
-      navigate('/');
     }
-  }, [id, navigate, editor]);
+  }, [playbook, editor]);
 
   useEffect(() => {
-    if (!currentPlaibook) return;
+    if (!playbook) return;
 
     const timer = setTimeout(() => {
-      const updatedPlaibooks = plaibooks.map((p) =>
-        p.id === currentPlaibook.id
-          ? { ...p, title, updatedAt: Date.now() }
-          : p
-      );
-      setPlaibooks(updatedPlaibooks);
+      updatePlaybook({ title });
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [title, currentPlaibook?.id]);
+  }, [title, playbook?.id]);
 
-  const handleUpdateQuestions = (questions: any[]) => {
-    if (!currentPlaibook) return;
-    
-    const updatedPlaibooks = plaibooks.map((p) =>
-      p.id === currentPlaibook.id
-        ? { ...p, questions, updatedAt: Date.now() }
-        : p
-    );
-    setPlaibooks(updatedPlaibooks);
-    setCurrentPlaibook({ ...currentPlaibook, questions });
+  const handleUpdateQuestions = (questions: SavedQuestion[]) => {
+    updateQuestions(questions);
   };
 
   const handleUpdateDocuments = (docIds: string[]) => {
-    if (!currentPlaibook) return;
-    
-    const updatedPlaibooks = plaibooks.map((p) =>
-      p.id === currentPlaibook.id
-        ? { ...p, selectedDocuments: docIds, updatedAt: Date.now() }
-        : p
-    );
-    setPlaibooks(updatedPlaibooks);
-    setCurrentPlaibook({ ...currentPlaibook, selectedDocuments: docIds });
+    // Document selection will be handled separately
+    toast.info("Document selection coming soon");
   };
 
   const handlePreview = () => {
-    if (!currentPlaibook?.questions || currentPlaibook.questions.length === 0) {
+    if (!playbook?.questions || playbook.questions.length === 0) {
       toast.error("No questions to preview. Generate questions first.");
       return;
     }
     setShowPreview(true);
   };
 
-  const handlePublish = () => {
-    if (!currentPlaibook?.questions || currentPlaibook.questions.length === 0) {
-      toast.error("No questions to publish. Generate questions first.");
+  const handleDeletePlaybook = async () => {
+    if (!id) return;
+
+    const { error } = await supabase
+      .from("playbooks")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to delete playbook");
       return;
     }
-    
-    // Mark as published
-    const updatedPlaibooks = plaibooks.map((p) =>
-      p.id === currentPlaibook.id
-        ? { ...p, published: true, updatedAt: Date.now() }
-        : p
-    );
-    setPlaibooks(updatedPlaibooks);
-    
-    toast.success("Plaibook published successfully!");
-    
-    // Navigate to the published page
-    const publishUrl = `/published/${currentPlaibook.id}`;
-    window.open(publishUrl, '_blank');
-  };
 
-  const handleDeletePlaybook = () => {
-    const updatedPlaibooks = plaibooks.filter((p) => p.id !== currentPlaibook?.id);
-    setPlaibooks(updatedPlaibooks);
     toast.success("Playbook deleted successfully");
     navigate('/playbooks');
   };
@@ -189,7 +141,24 @@ const Editor = () => {
     toast.info("Version history coming soon");
   };
 
-  if (!currentPlaibook) return null;
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!playbook) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Playbook not found</p>
+          <Button onClick={() => navigate('/playbooks')}>Go to Playbooks</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen overflow-hidden bg-background flex flex-col">
@@ -265,8 +234,8 @@ const Editor = () => {
             <div className="p-6 flex-1 flex flex-col overflow-y-auto space-y-4">
               <ExperimentSidebar
                 plaibook={{
-                  ...currentPlaibook,
-                  content: editorContent || currentPlaibook.content
+                  ...playbook,
+                  content: editorContent || playbook.content
                 }}
                 onUpdateQuestions={handleUpdateQuestions}
                 onUpdateDocuments={handleUpdateDocuments}
@@ -280,10 +249,10 @@ const Editor = () => {
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">{currentPlaibook?.title}</DialogTitle>
+            <DialogTitle className="text-2xl">{playbook?.title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 mt-4">
-            {currentPlaibook?.questions?.map((question, idx) => (
+            {playbook?.questions?.map((question, idx) => (
               <div key={question.id} className="border rounded-lg p-4 space-y-3">
                 <div className="flex items-start gap-2">
                   <span className="font-semibold text-sm text-muted-foreground">Q{idx + 1}:</span>
@@ -308,8 +277,8 @@ const Editor = () => {
             <DialogTitle>Invite Collaborators</DialogTitle>
           </DialogHeader>
           <PlaybookCollaborators 
-            playbookId={currentPlaibook.id}
-            ownerId={currentPlaibook.user_id}
+            playbookId={playbook.id}
+            ownerId={playbook.user_id}
             onClose={() => setShowCollaborators(false)}
           />
           <div className="flex justify-end gap-2 pt-4 border-t">
@@ -333,7 +302,7 @@ const Editor = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Playbook</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{currentPlaibook?.title}"? This action cannot be undone.
+              Are you sure you want to delete "{playbook?.title}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
