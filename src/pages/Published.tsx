@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Plaibook } from "@/lib/types";
-import { getAllPlaibooks } from "@/lib/localStorage";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Database } from "lucide-react";
 import {
@@ -18,12 +18,51 @@ const Published = () => {
   const [showDataSource, setShowDataSource] = useState(false);
 
   useEffect(() => {
-    const plaibooks = getAllPlaibooks();
-    const found = plaibooks.find((p) => p.id === id);
-    if (found) {
-      setPlaibook(found);
-    }
+    loadPlaybook();
   }, [id]);
+
+  const loadPlaybook = async () => {
+    if (!id) return;
+
+    try {
+      // Fetch playbook
+      const { data: playbookData, error: playbookError } = await supabase
+        .from("playbooks")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (playbookError) throw playbookError;
+
+      // Fetch questions and answers for this playbook
+      const { data: questions, error: questionsError } = await supabase
+        .from("questions")
+        .select("*, answers(answer)")
+        .eq("playbook_id", id);
+
+      if (questionsError) throw questionsError;
+
+      // Transform to Plaibook format
+      const transformedPlaybook: Plaibook = {
+        id: playbookData.id,
+        title: playbookData.title,
+        content: playbookData.content || "",
+        createdAt: new Date(playbookData.created_at).getTime(),
+        updatedAt: new Date(playbookData.updated_at).getTime(),
+        user_id: playbookData.user_id,
+        questions: questions?.map(q => ({
+          id: q.id,
+          question: q.question,
+          answer: q.answers?.[0]?.answer || "",
+        })) || [],
+      };
+
+      setPlaibook(transformedPlaybook);
+    } catch (error) {
+      console.error("Error loading playbook:", error);
+      setPlaibook(null);
+    }
+  };
 
   if (!plaibook) {
     return (

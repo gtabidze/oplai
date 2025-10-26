@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Plaibook, SavedQuestion } from "@/lib/types";
-import { getAllPlaibooks, savePlaibook } from "@/lib/localStorage";
+import { usePlaybooks } from "@/hooks/usePlaybooks";
 import {
   Table,
   TableBody,
@@ -46,6 +46,7 @@ interface QuestionWithPlaybook extends SavedQuestion {
 }
 
 const Playgrounds = () => {
+  const { playbooks: plaibooks, isLoading: playbooksLoading } = usePlaybooks();
   const [allQuestions, setAllQuestions] = useState<QuestionWithPlaybook[]>([]);
   const [selectedQuestion, setSelectedQuestion] = useState<QuestionWithPlaybook | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -90,26 +91,51 @@ const Playgrounds = () => {
   };
 
   useEffect(() => {
-    loadAllQuestions();
-  }, []);
+    if (!playbooksLoading) {
+      loadAllQuestions();
+    }
+  }, [plaibooks, playbooksLoading]);
 
-  const loadAllQuestions = () => {
-    const plaibooks = getAllPlaibooks();
-    const questions: QuestionWithPlaybook[] = [];
+  const loadAllQuestions = async () => {
+    if (plaibooks.length === 0) {
+      setAllQuestions([]);
+      return;
+    }
 
-    plaibooks.forEach((plaibook: Plaibook) => {
-      if (plaibook.questions && plaibook.questions.length > 0) {
-        plaibook.questions.forEach((question) => {
-          questions.push({
-            ...question,
-            plaibookTitle: plaibook.title,
-            plaibookId: plaibook.id,
-          });
-        });
-      }
-    });
+    try {
+      const playbookIds = plaibooks.map(p => p.id);
 
-    setAllQuestions(questions);
+      // Fetch questions with answers for these playbooks
+      const { data: questions, error: questionsError } = await supabase
+        .from("questions")
+        .select("*, answers(id, answer, score)")
+        .in("playbook_id", playbookIds);
+
+      if (questionsError) throw questionsError;
+
+      // Build question list with playbook titles
+      const questionsWithPlaybooks: QuestionWithPlaybook[] = (questions || []).map((q) => {
+        const playbook = plaibooks.find(p => p.id === q.playbook_id);
+        const firstAnswer = q.answers?.[0];
+
+        return {
+          id: q.id,
+          question: q.question,
+          answer: firstAnswer?.answer || "",
+          feedback: firstAnswer?.score !== null && firstAnswer?.score !== undefined
+            ? { score: firstAnswer.score, thumbsUp: firstAnswer.score >= 50 }
+            : undefined,
+          plaibookId: q.playbook_id,
+          plaibookTitle: playbook?.title || "Unknown",
+        };
+      });
+
+      setAllQuestions(questionsWithPlaybooks);
+    } catch (error) {
+      console.error("Error loading questions:", error);
+      toast.error("Failed to load questions");
+      setAllQuestions([]);
+    }
   };
 
   const handleRowClick = (question: QuestionWithPlaybook) => {
@@ -119,57 +145,49 @@ const Playgrounds = () => {
     setIsSheetOpen(true);
   };
 
-  const handleDeleteQuestion = () => {
+  const handleDeleteQuestion = async () => {
     if (!deleteQuestionId) return;
 
-    const plaibooks = getAllPlaibooks();
-    const updatedPlaibooks = plaibooks.map((plaibook: Plaibook) => {
-      if (plaibook.questions) {
-        return {
-          ...plaibook,
-          questions: plaibook.questions.filter((q) => q.id !== deleteQuestionId),
-        };
-      }
-      return plaibook;
-    });
+    try {
+      const { error } = await supabase
+        .from("questions")
+        .delete()
+        .eq("id", deleteQuestionId);
 
-    updatedPlaibooks.forEach((plaibook: Plaibook) => {
-      savePlaibook(plaibook);
-    });
+      if (error) throw error;
 
-    loadAllQuestions();
-    setDeleteQuestionId(null);
-    setIsSheetOpen(false);
-    toast.success("Question deleted successfully");
+      loadAllQuestions();
+      setDeleteQuestionId(null);
+      setIsSheetOpen(false);
+      toast.success("Question deleted successfully");
+    } catch (error) {
+      console.error("Error deleting question:", error);
+      toast.error("Failed to delete question");
+    }
   };
 
-  const handleEditQuestion = () => {
+  const handleEditQuestion = async () => {
     if (!selectedQuestion || !editedQuestion.trim()) return;
 
-    const plaibooks = getAllPlaibooks();
-    const updatedPlaibooks = plaibooks.map((plaibook: Plaibook) => {
-      if (plaibook.id === selectedQuestion.plaibookId && plaibook.questions) {
-        return {
-          ...plaibook,
-          questions: plaibook.questions.map((q) =>
-            q.id === selectedQuestion.id ? { ...q, question: editedQuestion.trim() } : q
-          ),
-        };
-      }
-      return plaibook;
-    });
+    try {
+      const { error } = await supabase
+        .from("questions")
+        .update({ question: editedQuestion.trim() })
+        .eq("id", selectedQuestion.id);
 
-    updatedPlaibooks.forEach((plaibook: Plaibook) => {
-      savePlaibook(plaibook);
-    });
+      if (error) throw error;
 
-    loadAllQuestions();
-    setIsEditing(false);
-    setSelectedQuestion({
-      ...selectedQuestion,
-      question: editedQuestion.trim(),
-    });
-    toast.success("Question updated successfully");
+      loadAllQuestions();
+      setIsEditing(false);
+      setSelectedQuestion({
+        ...selectedQuestion,
+        question: editedQuestion.trim(),
+      });
+      toast.success("Question updated successfully");
+    } catch (error) {
+      console.error("Error updating question:", error);
+      toast.error("Failed to update question");
+    }
   };
 
   const handleRegenerateAnswer = async (useComparison = false) => {
@@ -177,7 +195,6 @@ const Playgrounds = () => {
 
     setIsRegenerating(true);
     try {
-      const plaibooks = getAllPlaibooks();
       const plaibook = plaibooks.find((p: Plaibook) => p.id === selectedQuestion.plaibookId);
 
       if (!plaibook) {
@@ -211,44 +228,30 @@ const Playgrounds = () => {
 
         if (result1.error || result2.error) throw result1.error || result2.error;
 
-        const newAnswers = [
-          {
-            text: result1.data.answer,
-            provider: selectedProvider,
-            model: selectedModel,
-            timestamp: Date.now(),
-          },
-          {
-            text: result2.data.answer,
-            provider: compareProvider,
-            model: compareModel,
-            timestamp: Date.now(),
-          },
-        ];
+        // Upsert both answers to database
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Not authenticated");
 
-        const updatedPlaibooks = plaibooks.map((p: Plaibook) => {
-          if (p.id === selectedQuestion.plaibookId && p.questions) {
-            return {
-              ...p,
-              questions: p.questions.map((q) =>
-                q.id === selectedQuestion.id
-                  ? { ...q, answers: [...(q.answers || []), ...newAnswers] }
-                  : q
-              ),
-            };
-          }
-          return p;
-        });
-
-        updatedPlaibooks.forEach((p: Plaibook) => {
-          savePlaibook(p);
-        });
+        await Promise.all([
+          supabase
+            .from("answers")
+            .upsert({
+              question_id: selectedQuestion.id,
+              user_id: user.id,
+              answer: result1.data.answer,
+              score: null,
+            }),
+          supabase
+            .from("answers")
+            .upsert({
+              question_id: selectedQuestion.id,
+              user_id: user.id,
+              answer: result2.data.answer,
+              score: null,
+            }),
+        ]);
 
         loadAllQuestions();
-        setSelectedQuestion({
-          ...selectedQuestion,
-          answers: [...(selectedQuestion.answers || []), ...newAnswers],
-        });
         toast.success("Comparison answers generated successfully");
       } else {
         // Single provider regeneration
@@ -264,36 +267,23 @@ const Playgrounds = () => {
 
         if (error) throw error;
 
-        const newAnswer = {
-          text: data.answer,
-          provider: selectedProvider,
-          model: selectedModel,
-          timestamp: Date.now(),
-        };
+        // Upsert answer to database
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Not authenticated");
 
-        const updatedPlaibooks = plaibooks.map((p: Plaibook) => {
-          if (p.id === selectedQuestion.plaibookId && p.questions) {
-            return {
-              ...p,
-              questions: p.questions.map((q) =>
-                q.id === selectedQuestion.id
-                  ? { ...q, answer: data.answer, answers: [...(q.answers || []), newAnswer] }
-                  : q
-              ),
-            };
-          }
-          return p;
-        });
-
-        updatedPlaibooks.forEach((p: Plaibook) => {
-          savePlaibook(p);
-        });
+        await supabase
+          .from("answers")
+          .upsert({
+            question_id: selectedQuestion.id,
+            user_id: user.id,
+            answer: data.answer,
+            score: null,
+          });
 
         loadAllQuestions();
         setSelectedQuestion({
           ...selectedQuestion,
           answer: data.answer,
-          answers: [...(selectedQuestion.answers || []), newAnswer],
         });
         toast.success(`Answer regenerated with ${selectedProvider} - ${selectedModel}`);
       }

@@ -24,8 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { useLocalStorage } from "@/lib/localStorage";
-import { Plaibook } from "@/lib/types";
+import { usePlaybooks } from "@/hooks/usePlaybooks";
 
 interface APIEndpoint {
   id: string;
@@ -45,7 +44,7 @@ interface APIEndpoint {
 }
 
 const APIs = () => {
-  const [plaibooks] = useLocalStorage<Plaibook[]>("plaibooks", []);
+  const { playbooks: plaibooks, isLoading: playbooksLoading } = usePlaybooks();
   const [endpoints, setEndpoints] = useState<APIEndpoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   

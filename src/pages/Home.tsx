@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useLocalStorage } from "@/lib/localStorage";
 import { Plaibook, SavedQuestion } from "@/lib/types";
+import { usePlaybooks } from "@/hooks/usePlaybooks";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ import {
 const Home = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [plaibooks] = useLocalStorage<Plaibook[]>("plaibooks", []);
+  const { playbooks: plaibooks, isLoading: playbooksLoading, createPlaybook } = usePlaybooks();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPlaybook, setFilterPlaybook] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -32,31 +33,68 @@ const Home = () => {
   const [recentPlaibooks, setRecentPlaibooks] = useState<Plaibook[]>([]);
 
   useEffect(() => {
-    calculateStats();
-    loadRecentPlaibooks();
-  }, [plaibooks, searchQuery, filterPlaybook, filterStatus]);
+    if (!playbooksLoading) {
+      calculateStats();
+      loadRecentPlaibooks();
+    }
+  }, [plaibooks, searchQuery, filterPlaybook, filterStatus, playbooksLoading]);
 
-  const calculateStats = () => {
-    let totalQuestions = 0;
-    let answeredQuestions = 0;
+  const calculateStats = async () => {
+    if (!user) return;
 
-    plaibooks.forEach((plaibook: Plaibook) => {
-      if (plaibook.questions) {
-        totalQuestions += plaibook.questions.length;
-        answeredQuestions += plaibook.questions.filter((q: SavedQuestion) => q.answer).length;
+    try {
+      // Get playbook IDs for current user (owned + collaborator)
+      const playbookIds = plaibooks.map(p => p.id);
+
+      if (playbookIds.length === 0) {
+        setStats({
+          totalPlaibooks: 0,
+          totalQuestions: 0,
+          answeredQuestions: 0,
+          avgCompletionRate: 0,
+        });
+        return;
       }
-    });
 
-    const avgCompletion = totalQuestions > 0 
-      ? Math.round((answeredQuestions / totalQuestions) * 100) 
-      : 0;
+      // Fetch questions for these playbooks
+      const { data: questions, error: questionsError } = await supabase
+        .from("questions")
+        .select("id")
+        .in("playbook_id", playbookIds);
 
-    setStats({
-      totalPlaibooks: plaibooks.length,
-      totalQuestions,
-      answeredQuestions,
-      avgCompletionRate: avgCompletion,
-    });
+      if (questionsError) throw questionsError;
+
+      const questionIds = questions?.map(q => q.id) || [];
+
+      // Fetch answers for these questions
+      const { data: answers, error: answersError } = await supabase
+        .from("answers")
+        .select("question_id")
+        .in("question_id", questionIds);
+
+      if (answersError) throw answersError;
+
+      const totalQuestions = questions?.length || 0;
+      const answeredQuestions = new Set(answers?.map(a => a.question_id)).size;
+      const avgCompletion = totalQuestions > 0 
+        ? Math.round((answeredQuestions / totalQuestions) * 100) 
+        : 0;
+
+      setStats({
+        totalPlaibooks: plaibooks.length,
+        totalQuestions,
+        answeredQuestions,
+        avgCompletionRate: avgCompletion,
+      });
+    } catch (error) {
+      console.error("Error calculating stats:", error);
+      setStats({
+        totalPlaibooks: plaibooks.length,
+        totalQuestions: 0,
+        answeredQuestions: 0,
+        avgCompletionRate: 0,
+      });
+    }
   };
 
   const loadRecentPlaibooks = () => {
@@ -122,8 +160,7 @@ const Home = () => {
       user_id: user?.id || '',
     };
 
-    const updatedPlaibooks = [...plaibooks, newPlaibook];
-    localStorage.setItem("plaibooks", JSON.stringify(updatedPlaibooks));
+    createPlaybook(newPlaibook);
     navigate(`/doc/${newPlaibook.id}`);
   };
 

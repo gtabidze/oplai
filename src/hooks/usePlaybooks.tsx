@@ -12,25 +12,55 @@ export const usePlaybooks = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase
+      // Fetch owned playbooks
+      const { data: ownedData, error: ownedError } = await supabase
         .from("playbooks")
         .select("*")
-        .eq("user_id", user.id)
-        .order("updated_at", { ascending: false });
+        .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (ownedError) throw ownedError;
+
+      // Fetch playbooks where user is a collaborator
+      const { data: collabData, error: collabError } = await supabase
+        .from("playbook_collaborators")
+        .select("playbook_id")
+        .eq("user_id", user.id);
+
+      if (collabError) throw collabError;
+
+      const collabPlaybookIds = collabData?.map(c => c.playbook_id) || [];
+
+      // Fetch collaborator playbooks
+      let collaboratorPlaybooks: any[] = [];
+      if (collabPlaybookIds.length > 0) {
+        const { data: collabPlaybooksData, error: collabPlaybooksError } = await supabase
+          .from("playbooks")
+          .select("*")
+          .in("id", collabPlaybookIds);
+
+        if (collabPlaybooksError) throw collabPlaybooksError;
+        collaboratorPlaybooks = collabPlaybooksData || [];
+      }
+
+      // Combine and deduplicate
+      const allPlaybooks = [...(ownedData || []), ...collaboratorPlaybooks];
+      const uniquePlaybooks = Array.from(
+        new Map(allPlaybooks.map(pb => [pb.id, pb])).values()
+      );
 
       // Transform database format to app format
-      return (data || []).map((pb) => ({
-        id: pb.id,
-        title: pb.title,
-        content: pb.content || "",
-        createdAt: new Date(pb.created_at!).getTime(),
-        updatedAt: new Date(pb.updated_at!).getTime(),
-        user_id: pb.user_id,
-        questions: [], // Questions loaded separately
-        selectedDocuments: [],
-      })) as Plaibook[];
+      return uniquePlaybooks
+        .map((pb) => ({
+          id: pb.id,
+          title: pb.title,
+          content: pb.content || "",
+          createdAt: new Date(pb.created_at!).getTime(),
+          updatedAt: new Date(pb.updated_at!).getTime(),
+          user_id: pb.user_id,
+          questions: [], // Questions loaded separately
+          selectedDocuments: [],
+        }))
+        .sort((a, b) => b.updatedAt - a.updatedAt) as Plaibook[];
     },
   });
 

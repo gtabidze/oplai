@@ -11,6 +11,20 @@ export const useAuth = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Clean up localStorage on user switch
+      if (session?.user) {
+        const lastUserId = localStorage.getItem('last_user_id');
+        if (lastUserId && lastUserId !== session.user.id) {
+          // Clear user-specific localStorage keys
+          localStorage.removeItem('plaibooks');
+          localStorage.removeItem('questionSystemPrompt');
+          localStorage.removeItem('answerSystemPrompt');
+          localStorage.removeItem('questionCount');
+          localStorage.removeItem('llmProvider');
+        }
+        localStorage.setItem('last_user_id', session.user.id);
+      }
     });
 
     // Listen for auth changes
@@ -18,6 +32,20 @@ export const useAuth = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      
+      // Clean up localStorage on user switch
+      if (session?.user) {
+        const lastUserId = localStorage.getItem('last_user_id');
+        if (lastUserId && lastUserId !== session.user.id) {
+          // Clear user-specific localStorage keys
+          localStorage.removeItem('plaibooks');
+          localStorage.removeItem('questionSystemPrompt');
+          localStorage.removeItem('answerSystemPrompt');
+          localStorage.removeItem('questionCount');
+          localStorage.removeItem('llmProvider');
+        }
+        localStorage.setItem('last_user_id', session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
